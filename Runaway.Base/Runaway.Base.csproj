@@ -4,4 +4,8 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>E:\Dev\Project\Repository\Runaway\Runaway.Base\Runaway.Base.xml</DocumentationFile>
+  </PropertyGroup>
+
 </Project>
