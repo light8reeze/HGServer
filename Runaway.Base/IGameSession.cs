@@ -48,5 +48,9 @@ namespace Runaway.Base
     public abstract class SessionBase<TSocket>
         where TSocket : ISocket
     {
+        /// <summary>
+        /// session socket
+        /// </summary>
+        protected TSocket socket;
     }
 }

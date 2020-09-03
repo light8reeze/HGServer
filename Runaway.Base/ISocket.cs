@@ -21,27 +21,34 @@ namespace Runaway.Base
         /// buffer end index
         /// </summary>
         public int endIndex;
+
+        /// <summary>
+        /// IO Size
+        /// </summary>
+        public int size;
     }
 
     /// <summary>
     /// Accept callback
     /// </summary>
-    /// <param name="session">Accepted session</param>
-    public delegate void OnAcceptedDelegate(IGameSession session);
+    /// <param name="acceptor">acceptor object</param>
+    public delegate void OnAcceptedDelegate(object acceptor);
 
     /// <summary>
     /// receive callback
     /// </summary>
     /// <param name="args">receive arguments</param>
     /// <param name="size">received size</param>
-    public delegate void OnReceivedDelegate(IOEventArgs args, int size);
+    /// <param name="result">receive Result</param>
+    public delegate void OnReceivedDelegate(IOEventArgs args, int size, int result);
 
     /// <summary>
     /// send callback
     /// </summary>
     /// <param name="args">send IO argunements</param>
     /// <param name="size">sended size</param>
-    public delegate void OnSendedDelegate(IOEventArgs args, int size);
+    /// <param name="result">send size</param>
+    public delegate void OnSendedDelegate(IOEventArgs args, int size, int result);
 
     /// <summary>
     /// socket close callback
