@@ -8,7 +8,7 @@ namespace Runaway.Base
     /// object factory interface
     /// </summary>
     /// <typeparam name="T">object type</typeparam>
-    interface IFactory<T> 
+    interface IFactory<T>
         where T : new()
     {
         /// <summary>
@@ -23,7 +23,7 @@ namespace Runaway.Base
         T CreateObject();
 
         /// <summary>
-        /// Return object
+        /// Return object to factory
         /// </summary>
         /// <param name="returnObject">Return object</param>
         void ReturnObject(T returnObject);

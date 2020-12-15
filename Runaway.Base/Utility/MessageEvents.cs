@@ -1,0 +1,55 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Runaway.Base.Utility
+{
+    /// <summary>
+    /// Event Target enum
+    /// </summary>
+    enum EventTarget
+    {
+        OnlySession,
+        All,
+    }
+
+    class EventKey
+    {
+        public EventTarget Target
+        {
+            get; set;
+        }
+
+        public int EventNumber
+        {
+            get; set;
+        }
+
+    }
+
+    /// <summary>
+    /// Message Event class
+    /// </summary>
+    class MessageEvent
+    {
+        public EventTarget Target
+        {
+            get; set;
+        }
+
+        public delegate void OnMessageDelegate(object receiver, Message message);
+
+        public OnMessageDelegate OnMessageReceived
+        {
+            get;
+            internal set;
+        }
+    }
+
+    class MessageEvents
+    {
+        private Dictionary<int, MessageEvent> _eventList;
+
+        public delegate void MessageEventDelegate();
+    }
+}

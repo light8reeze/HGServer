@@ -5,9 +5,9 @@ using System.Text;
 namespace Runaway.Base
 {
     /// <summary>
-    /// Game client interface
+    /// Game user interface
     /// </summary>
-    public interface IGameClient
+    public interface IGameUser<TSession> where TSession : IGameClient
     {
     }
 }
