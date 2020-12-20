@@ -2,20 +2,27 @@
 
 namespace Runaway.Base
 {
+
     /// <summary>
     /// Network Session interface
     /// </summary>
     /// <typeparam name="T">Socket Class</typeparam>
-    public interface IGameClient<T> : IDisposable
+    public interface INetworkSession<T> : IDisposable
     {
+        #region Session Delegate
         /// <summary>
-        /// Socket Property
+        /// Session Connect callback
         /// </summary>
-        public T Client
-        {
-            get;
-            set;
-        }
+        /// <param name="sender">connection event session</param>
+        public delegate void SessionConnectionDelegate(object sender);
+
+        /// <summary>
+        /// Session Message IO callback
+        /// </summary>
+        /// <param name="message">IO Completed Message</param>
+        /// <param name="sender">IO Completed Object</param>
+        public delegate void SessionMessagingDelegate(Message message, object sender);
+        #endregion Session Delegate
 
         #region Method
         /// <summary>
@@ -26,7 +33,8 @@ namespace Runaway.Base
         /// <summary>
         /// Set Session Accept
         /// </summary>
-        public void Accept();
+        /// <param name="session">Session that setted accept</param>
+        public void Accept(INetworkSession<T> session);
 
         /// <summary>
         /// Client connect to other endpoint
@@ -38,25 +46,17 @@ namespace Runaway.Base
         /// <summary>
         /// Receive Packet Data to session
         /// </summary>
-        /// <param name="data">Packet buffer</param>
-        /// <param name="start">Start buffer index</param>
-        /// <param name="size">Receive Size</param>
-        /// <returns>Received size</returns>
-        public int Receive(byte[] data, int start, int size);
+        public void Receive();
 
         /// <summary>
         /// Send Data to session
         /// </summary>
-        /// <param name="data">Send Packet data</param>
-        /// <param name="start">Send Packet start index</param>
-        /// <param name="size">Send Data Size</param>
-        public void Send(byte[] data, int start, int size);
+        public void Send();
 
         /// <summary>
         /// Disconnect Session
         /// </summary>
         public void Disconnect();
-
         #endregion Method
     }
 }

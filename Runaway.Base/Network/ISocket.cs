@@ -23,46 +23,45 @@ namespace Runaway.Base
         public int size;
     }
 
-    #region Socket Delegate
-    /// <summary>
-    /// Accept callback
-    /// </summary>
-    /// <param name="acceptedSocket"></param>
-    /// <param name="sender">event object</param>
-    public delegate void OnAcceptedDelegate(object acceptedSocket, object sender);
-
-    /// <summary>
-    /// socket connect callback
-    /// </summary>
-    public delegate void OnConnectedDelegate(object sender);
-
-    /// <summary>
-    /// receive callback
-    /// </summary>
-    /// <param name="args">receive arguments</param>
-    /// <param name="sender">event object</param>
-    public delegate void OnReceivedDelegate(IOEventArgs args, object sender);
-
-    /// <summary>
-    /// send callback
-    /// </summary>
-    /// <param name="args">send IO argunements</param>
-    /// <param name="sender">event object</param>
-    public delegate void OnSendedDelegate(IOEventArgs args, object sender);
-
-    /// <summary>
-    /// socket close callback
-    /// </summary>
-    /// <param name="sender">event object</param>
-    public delegate void OnClosedDelegate(object sender);
-
-    #endregion Socket Delegate
-
     /// <summary>
     /// Socket Interface
     /// </summary>
     public interface ISocket : IDisposable
     {
+        #region Socket Delegate
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="acceptedSocket"></param>
+        /// <param name="sender">event object</param>
+        public delegate void OnAcceptedDelegate(object acceptedSocket, object sender);
+
+        /// <summary>
+        /// socket connect callback
+        /// </summary>
+        public delegate void OnConnectedDelegate(object sender);
+
+        /// <summary>
+        /// receive callback
+        /// </summary>
+        /// <param name="args">receive arguments</param>
+        /// <param name="sender">event object</param>
+        public delegate void OnReceivedDelegate(IOEventArgs args, object sender);
+
+        /// <summary>
+        /// send callback
+        /// </summary>
+        /// <param name="args">send IO argunements</param>
+        /// <param name="sender">event object</param>
+        public delegate void OnSendedDelegate(IOEventArgs args, object sender);
+
+        /// <summary>
+        /// socket close callback
+        /// </summary>
+        /// <param name="sender">event object</param>
+        public delegate void OnClosedDelegate(object sender);
+        #endregion Socket Delegate
+
         #region Method
         /// <summary>
         /// Initialize socket

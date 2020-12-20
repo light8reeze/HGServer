@@ -5,78 +5,21 @@ using System.Net.Sockets;
 
 namespace Runaway.Base
 {
-    class TcpSocket : ISocket
+    class TcpSocket : SocketBase
     {
         #region Properties
-        public Socket Socket
-        {
-            get;
-            private set;
-        }
-
         public bool Connected
         {
             get
             {
-                if (Socket == null)
+                if (socket == null)
                     return false;
 
-                return Socket.Connected;
+                return socket.Connected;
             }
         }
         #endregion Properties
 
-        #region Event
-        /// <summary>
-        /// On Accepted event
-        /// </summary>
-        private OnAcceptedDelegate _onAccepted;
-        public event OnAcceptedDelegate OnAccepted
-        {
-            add => _onAccepted += value;
-            remove => _onAccepted -= value;
-        }
-
-        /// <summary>
-        /// On Received event
-        /// </summary>
-        private OnReceivedDelegate _onReceived;
-        public event OnReceivedDelegate OnReceived
-        {
-            add => _onReceived += value;
-            remove => _onReceived -= value;
-        }
-
-        /// <summary>
-        /// On Sended event
-        /// </summary>
-        private OnSendedDelegate _onSended;
-        public event OnSendedDelegate OnSended
-        {
-            add => _onSended += value;
-            remove => _onSended -= value;
-        }
-
-        /// <summary>
-        /// On Closed event
-        /// </summary>
-        private OnClosedDelegate _onClosed;
-        public event OnClosedDelegate OnClosed
-        {
-            add => _onClosed += value;
-            remove => _onClosed -= value;
-        }
-
-        /// <summary>
-        /// On Connected Event
-        /// </summary>
-        private OnConnectedDelegate _onConnected;
-        public event OnConnectedDelegate OnConnected
-        {
-            add => _onConnected += value;
-            remove => _onConnected -= value;
-        }
-        #endregion Event
 
         #region Data Fields
         private bool _disposed = false;
@@ -89,7 +32,7 @@ namespace Runaway.Base
 
         public TcpSocket(Socket socket)
         {
-            Socket = socket;
+            this.socket = socket;
         }
 
         ~TcpSocket()
@@ -98,7 +41,88 @@ namespace Runaway.Base
         }
         #endregion Constructor & Destructor
 
-        #region Private Method
+        #region Method
+        public override void Accept()
+        {
+            if (socket == null) 
+                throw new NullReferenceException("Not Initialized Client");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
+
+            var accepted = socket.Accept();
+            TcpSocket tcpSocket = new TcpSocket(accepted);
+            onAccepted?.Invoke(tcpSocket, this);
+        }
+
+        public override void Connect(string ipAddress, int port)
+        {
+            if (socket == null) 
+                throw new NullReferenceException("Not Initialized Client");
+            
+            if (socket.Connected) 
+                throw new Exception("Client Aleready Connected");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
+
+            socket.Connect(ipAddress, port);
+            onConnected?.Invoke(this);
+        }
+
+        public override void Close()
+        {
+            if (socket == null) 
+                throw new NullReferenceException("Not Initialized Client");
+            
+            if (!socket.Connected) 
+                throw new Exception("Client Aleready disconnected");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
+
+            socket.Close();
+            onClosed?.Invoke(this);
+        }
+
+        public override void Initialize()
+        {
+            if (socket != null || socket.Connected) 
+                throw new Exception("Already Initialized");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
+
+            if (socket == null)
+                socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+        }
+
+        public override void Receive(byte[] buffer, int offset, int size)
+        {
+            if (buffer == null) 
+                throw new NullReferenceException();
+            
+            if (!CheckDataBuffer(buffer, offset, size)) 
+                throw new IndexOutOfRangeException();
+            
+            if (socket == null) 
+                throw new NullReferenceException("Not Initialized Client");
+            
+            if (!socket.Connected) 
+                throw new Exception("Client Aleready disconnected");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
+
+            int receivedSize = socket.Receive(buffer, offset, size, SocketFlags.None);
+            IOEventArgs args = new IOEventArgs
+            {
+                buffer = buffer,
+                startIndex = offset,
+                size = receivedSize
+            };
+            onReceived?.Invoke(args, this);
+        }
         private bool CheckDataBuffer(byte[] buffer, int offset, int size)
         {
             if (buffer == null)
@@ -112,89 +136,40 @@ namespace Runaway.Base
 
             return true;
         }
-        #endregion Private Method
 
-        #region Implement ISocket
-        public void Accept()
+        public override void Send(byte[] buffer, int offset, int size)
         {
-            if (Socket == null) throw new NullReferenceException("Not Initialized Client");
-            if (_disposed) throw new ObjectDisposedException(ToString());
+            if (buffer == null) 
+                throw new NullReferenceException();
+            
+            if (!CheckDataBuffer(buffer, offset, size)) 
+                throw new IndexOutOfRangeException();
+            
+            if (socket == null) 
+                throw new NullReferenceException("Not Initialized Client");
+            
+            if (!socket.Connected) 
+                throw new Exception("Client Aleready disconnected");
+            
+            if (_disposed) 
+                throw new ObjectDisposedException(ToString());
 
-            var accepted = Socket.Accept();
-            TcpSocket tcpSocket = new TcpSocket(accepted);
-            _onAccepted?.Invoke(tcpSocket, this);
-        }
-
-        public void Connect(string ipAddress, int port)
-        {
-            if (Socket == null) throw new NullReferenceException("Not Initialized Client");
-            if (Socket.Connected) throw new Exception("Client Aleready Connected");
-            if (_disposed) throw new ObjectDisposedException(ToString());
-
-            Socket.Connect(ipAddress, port);
-            _onConnected?.Invoke(this);
-        }
-
-        public void Close()
-        {
-            if (Socket == null) throw new NullReferenceException("Not Initialized Client");
-            if (!Socket.Connected) throw new Exception("Client Aleready disconnected");
-            if (_disposed) throw new ObjectDisposedException(ToString());
-
-            Socket.Close();
-            _onClosed?.Invoke(this);
-        }
-
-        public void Initialize()
-        {
-            if (Socket != null || Socket.Connected) throw new Exception("Already Initialized");
-            if (_disposed) throw new ObjectDisposedException(ToString());
-
-            if (Socket == null)
-                Socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-        }
-
-        public void Receive(byte[] buffer, int offset, int size)
-        {
-            if (buffer == null) throw new NullReferenceException();
-            if (!CheckDataBuffer(buffer, offset, size)) throw new IndexOutOfRangeException();
-            if (Socket == null) throw new NullReferenceException("Not Initialized Client");
-            if (!Socket.Connected) throw new Exception("Client Aleready disconnected");
-            if (_disposed) throw new ObjectDisposedException(ToString());
-
-            int receivedSize = Socket.Receive(buffer, offset, size, SocketFlags.None);
-            IOEventArgs args = new IOEventArgs
-            {
-                buffer = buffer,
-                startIndex = offset,
-                size = receivedSize
-            };
-            _onReceived?.Invoke(args, this);
-        }
-
-        public void Send(byte[] buffer, int offset, int size)
-        {
-            if (buffer == null) throw new NullReferenceException();
-            if (!CheckDataBuffer(buffer, offset, size)) throw new IndexOutOfRangeException();
-            if (Socket == null) throw new NullReferenceException("Not Initialized Client");
-            if (!Socket.Connected) throw new Exception("Client Aleready disconnected");
-            if (_disposed) throw new ObjectDisposedException(ToString());
-
-            int sendedSize = Socket.Send(buffer, offset, size, SocketFlags.None);
+            int sendedSize = socket.Send(buffer, offset, size, SocketFlags.None);
             IOEventArgs args = new IOEventArgs
             {
                 buffer = buffer,
                 startIndex = offset,
                 size = sendedSize
             };
-            _onSended?.Invoke(args, this);
+            onSended?.Invoke(args, this);
         }
-        #endregion Implement ISocket
+        #endregion Method
 
         #region Implement IDisposable
-        public void Dispose()
+        public override void Dispose()
         {
-            throw new NotImplementedException();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -204,7 +179,7 @@ namespace Runaway.Base
 
             if (disposing)
             {
-                Socket?.Dispose();
+                socket?.Dispose();
             }
 
             _disposed = true;
