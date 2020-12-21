@@ -2,28 +2,12 @@
 
 namespace Runaway.Base
 {
-
     /// <summary>
     /// Network Session interface
     /// </summary>
     /// <typeparam name="T">Socket Class</typeparam>
     public interface INetworkSession<T> : IDisposable
     {
-        #region Session Delegate
-        /// <summary>
-        /// Session Connect callback
-        /// </summary>
-        /// <param name="sender">connection event session</param>
-        public delegate void SessionConnectionDelegate(object sender);
-
-        /// <summary>
-        /// Session Message IO callback
-        /// </summary>
-        /// <param name="message">IO Completed Message</param>
-        /// <param name="sender">IO Completed Object</param>
-        public delegate void SessionMessagingDelegate(Message message, object sender);
-        #endregion Session Delegate
-
         #region Method
         /// <summary>
         /// Session Initialize
@@ -33,8 +17,7 @@ namespace Runaway.Base
         /// <summary>
         /// Set Session Accept
         /// </summary>
-        /// <param name="session">Session that setted accept</param>
-        public void Accept(INetworkSession<T> session);
+        public void Accept();
 
         /// <summary>
         /// Client connect to other endpoint

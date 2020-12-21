@@ -2,156 +2,160 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Runaway.Base.Network
+namespace Runaway.Base
 {
-    class NetworkSession<T> : INetworkSession<T>
+    abstract class NetworkSession<T> : INetworkSession<T>
     {
         #region Data Fields
         protected T socket;
-
-        private Func<NetworkSession<T>> _creatorFunc;
-        public Func<NetworkSession<T>>  CreatorFunc
-        {
-            protected get
-            {
-                _creatorFunc ??= (() => { return new NetworkSession<T>(); });
-
-                return _creatorFunc;
-            }
-            set
-            {
-                _creatorFunc = value;
-            }
-        }
-        
-        private Action<NetworkSession<T>>   _deleterFunc;
-        public Action<NetworkSession<T>>    DeleterFunc
-        {
-            protected get
-            {
-                _deleterFunc ??= ((session) => { session = null; });
-
-                return _deleterFunc;
-            }
-            set
-            {
-                _deleterFunc = value;
-            }
-        }
         #endregion Data Fields
+
+        #region Session Delegate
+        /// <summary>
+        /// Session Connect callback
+        /// </summary>
+        /// <param name="sender">connection event session</param>
+        public delegate void ConnectionEventHandler(object sender);
+
+        /// <summary>
+        /// Session Message IO callback
+        /// </summary>
+        /// <param name="message">IO Completed Message</param>
+        /// <param name="sender">IO Completed Object</param>
+        public delegate void DataTransferHandler(Message message, object sender);
+        #endregion Session Delegate
 
         #region Event
         /// <summary>
         /// On Accept session event
         /// </summary>
-        private INetworkSession<T>.SessionConnectionDelegate _onAccept;
-        public event INetworkSession<T>.SessionConnectionDelegate OnAccept
+        private ConnectionEventHandler _sessionAccept;
+        public event ConnectionEventHandler SessionAccept
         {
-            add => _onAccept += value;
-            remove => _onAccept -= value;
+            add => _sessionAccept += value;
+            remove => _sessionAccept -= value;
         }
 
         /// <summary>
         /// On Accepted event
         /// </summary>
-        private INetworkSession<T>.SessionConnectionDelegate _onAccepted;
-        public event INetworkSession<T>.SessionConnectionDelegate OnAccepted
+        private ConnectionEventHandler      _sessionAccepted;
+        public event ConnectionEventHandler SessionAccepted
         {
-            add => _onAccepted += value;
-            remove => _onAccepted -= value;
+            add => _sessionAccepted += value;
+            remove => _sessionAccepted -= value;
         }
 
         /// <summary>
         /// On Received event
         /// </summary>
-        private INetworkSession<T>.SessionMessagingDelegate _onReceived;
-        public event INetworkSession<T>.SessionMessagingDelegate OnReceived
+        private DataTransferHandler         _dataReceived;
+        public event DataTransferHandler    DataReceived
         {
-            add => _onReceived += value;
-            remove => _onReceived -= value;
+            add => _dataReceived += value;
+            remove => _dataReceived -= value;
         }
 
         /// <summary>
         /// On Sended event
         /// </summary>
-        private INetworkSession<T>.SessionMessagingDelegate _onSended;
-        public event INetworkSession<T>.SessionMessagingDelegate OnSended
+        private DataTransferHandler         _dataSended;
+        public event DataTransferHandler    DataSended
         {
-            add => _onSended += value;
-            remove => _onSended -= value;
+            add => _dataSended += value;
+            remove => _dataSended -= value;
         }
 
         /// <summary>
         /// On Closed event
         /// </summary>
-        private INetworkSession<T>.SessionConnectionDelegate _onDisconnect;
-        public event INetworkSession<T>.SessionConnectionDelegate OnDisconnect
+        private ConnectionEventHandler      _sessionDisconnect;
+        public event ConnectionEventHandler SessionDisconnect
         {
-            add => _onDisconnect += value;
-            remove => _onDisconnect -= value;
+            add => _sessionDisconnect += value;
+            remove => _sessionDisconnect -= value;
         }
 
         /// <summary>
         /// On Closed event
         /// </summary>
-        private INetworkSession<T>.SessionConnectionDelegate _onDisconnedted;
-        public event INetworkSession<T>.SessionConnectionDelegate OnDisconnected
+        private ConnectionEventHandler      _sessionDisconnedted;
+        public event ConnectionEventHandler SessionDisconnected
         {
-            add => _onDisconnedted += value;
-            remove => _onDisconnedted -= value;
+            add => _sessionDisconnedted += value;
+            remove => _sessionDisconnedted -= value;
         }
 
         /// <summary>
         /// On Connected Event
         /// </summary>
-        private INetworkSession<T>.SessionConnectionDelegate _onConnected;
-        public event INetworkSession<T>.SessionConnectionDelegate OnConnected
+        private ConnectionEventHandler      _sessionConnected;
+        public event ConnectionEventHandler SessionConnected
         {
-            add => _onConnected += value;
-            remove => _onConnected -= value;
+            add => _sessionConnected += value;
+            remove => _sessionConnected -= value;
+        }
+
+        private Func<NetworkSession<T>> _createSession;
+        public virtual Func<NetworkSession<T>> CreateSession
+        {
+            protected get => _createSession ??= (() => { return default; });
+            set => _createSession = value;
+        }
+
+        private Action<NetworkSession<T>> _deleteSession;
+        public virtual Action<NetworkSession<T>> DeleteSession
+        {
+            protected get => _deleteSession ??= ((session) => { session.Dispose(); });
+            set => _deleteSession = value;
         }
         #endregion Event
 
+        #region Constructor & Destructor
+        public NetworkSession()
+        {
+            SessionAccept   += OnAccept;
+            SessionAccepted += OnAccepted;
+            DataReceived    += OnReceived;
+            DataSended      += OnSended;
+            SessionDisconnect   += OnDisconnect;
+            SessionDisconnected += OnDisconnected;
+        }
+        #endregion Constructor & Destructor
+
         #region Method
-        public virtual void OnAcceptSession(INetworkSession<T> session)
+        public virtual void OnAccept(object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Accept(INetworkSession<T> session)
+        public virtual void OnAccepted(object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Connect(string ipAddress, int port)
+        public virtual void OnReceived(Message message, object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Disconnect()
+        public virtual void OnSended(Message message, object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Dispose()
+        public virtual void OnConnected(object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Initialize()
+        public virtual void OnDisconnect(object sender)
         {
-            throw new NotImplementedException();
         }
-
-        public virtual void Receive()
+        public virtual void OnDisconnected(object sender)
         {
-            throw new NotImplementedException();
-        }
-
-        public virtual void Send()
-        {
-            throw new NotImplementedException();
         }
         #endregion Method
+
+        #region Abstract Method
+        public abstract void Accept();
+        public abstract void OnAcceptEvent(object acceptedSocket, object sender);
+        public abstract void Connect(string ipAddress, int port);
+        public abstract void Disconnect();
+        public abstract void Dispose();
+        public abstract void Initialize();
+        public abstract void Receive();
+        public abstract void Send();
+        #endregion Abstract Method
     }
 }
