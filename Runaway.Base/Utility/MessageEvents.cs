@@ -15,11 +15,6 @@ namespace Runaway.Base.Utility
 
     class EventKey
     {
-        public EventTarget Target
-        {
-            get; set;
-        }
-
         public int EventNumber
         {
             get; set;
@@ -32,11 +27,6 @@ namespace Runaway.Base.Utility
     /// </summary>
     class MessageEvent
     {
-        public EventTarget Target
-        {
-            get; set;
-        }
-
         public delegate void OnMessageDelegate(object receiver, Message message);
 
         public OnMessageDelegate OnMessageReceived
