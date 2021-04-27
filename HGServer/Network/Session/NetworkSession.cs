@@ -1,13 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using HGServer.Network.Packet;
+using HGServer.Utility;
 
-namespace Runaway.Base
+namespace HGServer.Network.Session
 {
     abstract class NetworkSession<T> : INetworkSession<T>
     {
         #region Data Fields
-        protected T socket;
+        
+        protected T                 socket;
+        protected MessageQueue      receivedMessageQueue;
+
         #endregion Data Fields
 
         #region Session Delegate
@@ -29,7 +34,7 @@ namespace Runaway.Base
         /// <summary>
         /// On Accept session event
         /// </summary>
-        private ConnectionEventHandler _sessionAccept;
+        protected ConnectionEventHandler _sessionAccept;
         public event ConnectionEventHandler SessionAccept
         {
             add => _sessionAccept += value;
@@ -37,9 +42,19 @@ namespace Runaway.Base
         }
 
         /// <summary>
+        /// Exception handler on accept occured session accept
+        /// </summary>
+        protected ExceptionEventHandler _acceptException;
+        public event ExceptionEventHandler AcceptException
+        {
+            add => _acceptException += value;
+            remove => _acceptException -= value;
+        }
+
+        /// <summary>
         /// On Accepted event
         /// </summary>
-        private ConnectionEventHandler      _sessionAccepted;
+        protected ConnectionEventHandler      _sessionAccepted;
         public event ConnectionEventHandler SessionAccepted
         {
             add => _sessionAccepted += value;
@@ -49,7 +64,7 @@ namespace Runaway.Base
         /// <summary>
         /// On Received event
         /// </summary>
-        private DataTransferHandler         _dataReceived;
+        protected DataTransferHandler         _dataReceived;
         public event DataTransferHandler    DataReceived
         {
             add => _dataReceived += value;
@@ -57,9 +72,19 @@ namespace Runaway.Base
         }
 
         /// <summary>
+        /// Exception handler on accept occured receive
+        /// </summary>
+        protected ExceptionEventHandler _receiveException;
+        public event ExceptionEventHandler ReceiveException
+        {
+            add => _receiveException += value;
+            remove => _receiveException -= value;
+        }
+
+        /// <summary>
         /// On Sended event
         /// </summary>
-        private DataTransferHandler         _dataSended;
+        protected DataTransferHandler         _dataSended;
         public event DataTransferHandler    DataSended
         {
             add => _dataSended += value;
@@ -67,9 +92,19 @@ namespace Runaway.Base
         }
 
         /// <summary>
+        /// Exception handler on accept occured session accept
+        /// </summary>
+        protected ExceptionEventHandler       _sendException;
+        public event ExceptionEventHandler  SendException
+        {
+            add => _sendException += value;
+            remove => _sendException -= value;
+        }
+
+        /// <summary>
         /// On Closed event
         /// </summary>
-        private ConnectionEventHandler      _sessionDisconnect;
+        protected ConnectionEventHandler      _sessionDisconnect;
         public event ConnectionEventHandler SessionDisconnect
         {
             add => _sessionDisconnect += value;
@@ -79,7 +114,7 @@ namespace Runaway.Base
         /// <summary>
         /// On Closed event
         /// </summary>
-        private ConnectionEventHandler      _sessionDisconnedted;
+        protected ConnectionEventHandler      _sessionDisconnedted;
         public event ConnectionEventHandler SessionDisconnected
         {
             add => _sessionDisconnedted += value;
@@ -89,11 +124,21 @@ namespace Runaway.Base
         /// <summary>
         /// On Connected Event
         /// </summary>
-        private ConnectionEventHandler      _sessionConnected;
+        protected ConnectionEventHandler      _sessionConnected;
         public event ConnectionEventHandler SessionConnected
         {
             add => _sessionConnected += value;
             remove => _sessionConnected -= value;
+        }
+
+        /// <summary>
+        /// Exception handler on accept occured session connect
+        /// </summary>
+        protected ExceptionEventHandler       _connectException;
+        public event ExceptionEventHandler  ConnectException
+        {
+            add => _connectException += value;
+            remove => _connectException -= value;
         }
 
         private Func<NetworkSession<T>> _createSession;
@@ -111,7 +156,7 @@ namespace Runaway.Base
         }
         #endregion Event
 
-        #region Constructor & Destructor
+        #region Constructor
         public NetworkSession()
         {
             SessionAccept   += OnAccept;
@@ -121,7 +166,7 @@ namespace Runaway.Base
             SessionDisconnect   += OnDisconnect;
             SessionDisconnected += OnDisconnected;
         }
-        #endregion Constructor & Destructor
+        #endregion Constructor
 
         #region Method
         public virtual void OnAccept(object sender)
@@ -149,13 +194,12 @@ namespace Runaway.Base
 
         #region Abstract Method
         public abstract void Accept();
-        public abstract void OnAcceptEvent(object acceptedSocket, object sender);
         public abstract void Connect(string ipAddress, int port);
         public abstract void Disconnect();
         public abstract void Dispose();
         public abstract void Initialize();
         public abstract void Receive();
-        public abstract void Send();
+        public abstract void Send(Message message);
         #endregion Abstract Method
     }
 }

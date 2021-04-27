@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Runaway.Base.Network
+namespace HGServer.Game
 {
     interface IGameApplication
     {

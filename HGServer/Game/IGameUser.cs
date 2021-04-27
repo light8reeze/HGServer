@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using HGServer.Network.Session;
 
-namespace Runaway.Base
+namespace HGServer.Game
 {
     /// <summary>
     /// Game user interface
     /// </summary>
-    public interface IGameUser<TSession> where TSession : INetworkSession
+    public interface IGameUser<TSession> where TSession : INetworkSession<TSession>
     {
     }
 }

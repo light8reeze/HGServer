@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Runaway.Base.Utility
+namespace HGServer.Network.Packet
 {
     /// <summary>
     /// Event Target enum

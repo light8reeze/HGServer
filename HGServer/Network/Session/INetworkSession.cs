@@ -1,6 +1,7 @@
 ﻿using System;
+using HGServer.Network.Packet;
 
-namespace Runaway.Base
+namespace HGServer.Network.Session
 {
     /// <summary>
     /// Network Session interface
@@ -34,7 +35,7 @@ namespace Runaway.Base
         /// <summary>
         /// Send Data to session
         /// </summary>
-        public void Send();
+        public void Send(Message message);
 
         /// <summary>
         /// Disconnect Session

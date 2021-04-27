@@ -1,28 +1,7 @@
 ﻿using System;
 
-namespace Runaway.Base
+namespace HGServer.Network.Sockets
 {
-    /// <summary>
-    /// Socket IO Event Arguments
-    /// </summary>
-    public class IOEventArgs
-    {
-        /// <summary>
-        /// packet buffer
-        /// </summary>
-        public byte[] buffer;
-
-        /// <summary>
-        /// buffer Start index
-        /// </summary>
-        public int startIndex;
-
-        /// <summary>
-        /// IO Size
-        /// </summary>
-        public int size;
-    }
-
     /// <summary>
     /// Socket Interface
     /// </summary>
@@ -34,32 +13,32 @@ namespace Runaway.Base
         /// </summary>
         /// <param name="acceptedSocket"></param>
         /// <param name="sender">event object</param>
-        public delegate void OnAcceptedDelegate(object acceptedSocket, object sender);
+        public delegate void AcceptedHandler(object acceptedSocket, object sender);
 
         /// <summary>
         /// socket connect callback
         /// </summary>
-        public delegate void OnConnectedDelegate(object sender);
+        public delegate void ConnectedHandler(object sender);
 
         /// <summary>
         /// receive callback
         /// </summary>
-        /// <param name="args">receive arguments</param>
+        /// <param name="dataSize">received size</param>
         /// <param name="sender">event object</param>
-        public delegate void OnReceivedDelegate(IOEventArgs args, object sender);
+        public delegate void ReceivedHandler(int dataSize, object sender);
 
         /// <summary>
         /// send callback
         /// </summary>
-        /// <param name="args">send IO argunements</param>
+        /// <param name="dataSize">sended size</param>
         /// <param name="sender">event object</param>
-        public delegate void OnSendedDelegate(IOEventArgs args, object sender);
+        public delegate void SendedHander(int dataSize, object sender);
 
         /// <summary>
         /// socket close callback
         /// </summary>
         /// <param name="sender">event object</param>
-        public delegate void OnClosedDelegate(object sender);
+        public delegate void ClosedHandler(object sender);
         #endregion Socket Delegate
 
         #region Method
@@ -70,9 +49,28 @@ namespace Runaway.Base
         void Initialize();
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ipAddress"></param>
+        /// <param name="port"></param>
+        void Bind(string ipAddress, int port);
+
+        /// <summary>
+        /// Socket Listen
+        /// </summary>
+        /// <param name="backLog">count of backlog</param>
+        void Listen(int backLog);
+
+        /// <summary>
         /// accept socket
         /// </summary>
         void Accept();
+
+        /// <summary>
+        /// accept socket
+        /// </summary>
+        /// <param name="socket">socket that will accepted</param>
+        void Accept(object socket);
 
         /// <summary>
         /// Connect socket
@@ -84,18 +82,14 @@ namespace Runaway.Base
         /// <summary>
         /// Receive Data from network
         /// </summary>
-        /// <param name="buffer">data buffer</param>
-        /// <param name="offset">data buffer offset</param>
-        /// <param name="size">data buffer size</param>
-        void Receive(byte[] buffer, int offset, int size);
+        /// <param name="dataMemory">data buffer memory</param>
+        void Receive(Memory<byte> dataMemory);
 
         /// <summary>
         /// Send Data
         /// </summary>
-        /// <param name="buffer">data buffer</param>
-        /// <param name="offset">data buffer offset</param>
-        /// <param name="size">data buffer size</param>
-        void Send(byte[] buffer, int offset, int size);
+        /// <param name="dataMemory">send data buffer memory</param>
+        void Send(ReadOnlyMemory<byte> dataMemory);
 
         /// <summary>
         /// Close socket

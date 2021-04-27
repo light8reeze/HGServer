@@ -1,2 +1,2 @@
-# Runaway-Network
- Runaway-Network is network framework using C#
+# HGServer
+ HGServer is network framework using C#
