@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace HGServer.Network.Packet
@@ -7,7 +8,8 @@ namespace HGServer.Network.Packet
     /// <summary>
     /// 
     /// </summary>
-    public struct MessageHeader
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    public struct Message
     {
         public int Size
         {
@@ -26,7 +28,7 @@ namespace HGServer.Network.Packet
     /// <summary>
     /// 
     /// </summary>
-    public class MessageQueue
+    public class MessageBuffer
     {
         #region Constant
         public readonly int DefaultSize = 1024;
@@ -39,12 +41,12 @@ namespace HGServer.Network.Packet
         #endregion Data Fields
 
         #region Constructor
-        public MessageQueue()
+        public MessageBuffer()
         {
             Initialize(DefaultSize);
         }
 
-        public MessageQueue(int bufferSize)
+        public MessageBuffer(int bufferSize)
         {
             Initialize(bufferSize);
         }

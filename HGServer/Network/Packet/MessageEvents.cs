@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using HGServer.Utility;
 
 namespace HGServer.Network.Packet
 {
@@ -13,15 +14,6 @@ namespace HGServer.Network.Packet
         All,
     }
 
-    class EventKey
-    {
-        public int EventNumber
-        {
-            get; set;
-        }
-
-    }
-
     /// <summary>
     /// Message Event class
     /// </summary>
@@ -31,15 +23,57 @@ namespace HGServer.Network.Packet
 
         public OnMessageDelegate OnMessageReceived
         {
+            set;
             get;
-            internal set;
+        }
+
+        public ExceptionEventHandler OnMessageEventException
+        {
+            get;
+            set;
+        }
+
+        public string EventName
+        {
+            get;
+            set;
         }
     }
 
     class MessageEvents
     {
-        private Dictionary<int, MessageEvent> _eventList;
+        private static Dictionary<int, Dictionary<string, MessageEvent>> _eventList;
 
         public delegate void MessageEventDelegate();
+
+        public static void AddEvent(int messageType, MessageEvent messageEvent)
+        {
+            if (_eventList.ContainsKey(messageType) == false)
+            {
+                _eventList.Add(messageType, new Dictionary<string, MessageEvent>());
+            }
+
+            var events = _eventList[messageType];
+            events.Add(messageEvent.EventName, messageEvent);
+        }
+
+        public static void Invoke(object receiver, Message message)
+        {
+            var events = _eventList[message.MessageNo];
+
+            foreach (var eventPair in events)
+            {
+                var value = eventPair.Value;
+
+                try
+                {
+                    value?.OnMessageReceived?.Invoke(receiver, message);
+                }
+                catch (Exception e)
+                {
+                    value?.OnMessageEventException?.Invoke(receiver, e);
+                }
+            }
+        }
     }
 }

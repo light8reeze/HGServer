@@ -36,7 +36,7 @@ namespace HGServer.Network.Session
             socket = new TcpAsyncSocket();
             socket.Initialize();
 
-            receivedMessageQueue    = new MessageQueue();
+            receivedMessageQueue    = new MessageBuffer();
         }
 
         public override void Accept()
@@ -100,7 +100,7 @@ namespace HGServer.Network.Session
             base.OnReceived(message, sender);
         }
 
-        public override void Send(Message message)
+        public override void Send<TMessage>(TMessage message)
         {
             if (socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
@@ -108,10 +108,11 @@ namespace HGServer.Network.Session
             if (!socket.Connected) 
                 throw new Exception("Client Not Connected");
 
-            var sendMessage = message.Serialize();
+            var messageSpan = new Span<TMessage>(message);
+            var sendMessage = MessageConverter.ConvertToByteArray(messageSpan);
             try
             {
-                socket?.Send(new ReadOnlyMemory<byte>(sendMessage));
+                socket?.Send(new ReadOnlyMemory<byte>(sendMessage.ToArray()));
             }
             catch (Exception e)
             {

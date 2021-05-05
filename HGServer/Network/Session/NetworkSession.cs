@@ -11,7 +11,7 @@ namespace HGServer.Network.Session
         #region Data Fields
         
         protected T                 socket;
-        protected MessageQueue      receivedMessageQueue;
+        protected MessageBuffer      receivedMessageQueue;
 
         #endregion Data Fields
 
@@ -199,7 +199,7 @@ namespace HGServer.Network.Session
         public abstract void Dispose();
         public abstract void Initialize();
         public abstract void Receive();
-        public abstract void Send(Message message);
+        public abstract void Send<TMessage>(TMessage message);
         #endregion Abstract Method
     }
 }
