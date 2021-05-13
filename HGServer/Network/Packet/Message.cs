@@ -71,7 +71,7 @@ namespace HGServer.Network.Packet
             throw new NotImplementedException();
         }
 
-        public Memory<byte> Pop()
+        public Span<byte> Pop()
         {
             throw new NotImplementedException();
         }
@@ -100,19 +100,44 @@ namespace HGServer.Network.Packet
             Push(dataSpan);
         }
 
-        public void OnDataPushed(Span<byte> pushedData)
+        public void Push<T>(ref T data) where T : struct
         {
-            OnDataPushed(pushedData.Length);
+            if (!(data is Message))
+                throw new ArgumentException();
+
+            var writeSpan = GetWriteSpan();
+            MemoryMarshal.Write(writeSpan, ref data);
+            Commit(Marshal.SizeOf(data));
         }
 
-        public void OnDataPushed(int size)
+        public bool TryPush<T>(ref T data) where T : struct
+        {
+            if (!(data is Message))
+                throw new ArgumentException();
+
+            var writeSpan = GetWriteSpan();
+            if(MemoryMarshal.TryWrite(writeSpan, ref data))
+            {
+                Commit(Marshal.SizeOf(data));
+                return true;
+            }
+
+            return false;
+        }
+
+        public void Commit(int size)
         {
             _writeIndex += size;
         }
 
         public Memory<byte> GetWriteMemory()
         {
-            return _messageBuffer.AsMemory<byte>(_readIndex, _messageBuffer.Length - _readIndex);
+            return _messageBuffer.AsMemory(_readIndex, _messageBuffer.Length - _readIndex);
+        }
+
+        public Span<byte> GetWriteSpan()
+        {
+            return _messageBuffer.AsSpan(_readIndex, _messageBuffer.Length - _readIndex);
         }
         #endregion Method
     }

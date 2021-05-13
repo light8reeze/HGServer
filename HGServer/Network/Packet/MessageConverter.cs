@@ -11,7 +11,7 @@ namespace HGServer.Network.Packet
 
         internal static void InsertMessageType(int messageNo, Type messageType)
         {
-            if(_messageTypeList.ContainsKey(messageNo))
+            if (_messageTypeList.ContainsKey(messageNo))
             {
                 throw new ArgumentException($"Message Type overlapped {messageNo}");
             }

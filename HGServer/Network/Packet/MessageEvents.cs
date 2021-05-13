@@ -21,16 +21,23 @@ namespace HGServer.Network.Packet
     {
         public delegate void OnMessageDelegate(object receiver, Message message);
 
+        public delegate void OnMessageException(object receiver, Message message, Exception e);
+
         public OnMessageDelegate OnMessageReceived
         {
             set;
             get;
         }
 
-        public ExceptionEventHandler OnMessageEventException
+        public OnMessageException OnMessageEventException
         {
             get;
             set;
+        }
+
+        public virtual void OnCatchException(object receiver, Message message, Exception e)
+        {
+            OnMessageEventException?.Invoke(receiver, message, e);
         }
 
         public string EventName
@@ -71,7 +78,7 @@ namespace HGServer.Network.Packet
                 }
                 catch (Exception e)
                 {
-                    value?.OnMessageEventException?.Invoke(receiver, e);
+                    value?.OnMessageEventException(receiver, message, e);
                 }
             }
         }
