@@ -152,8 +152,8 @@ namespace HGServer.Network.Sockets
         public abstract void Accept(object socket);
         public abstract void Connect(string ipAddress, int port);
         public abstract void Dispose();
-        public abstract void Receive(Memory<byte> dataMemory);
-        public abstract void Send(ReadOnlyMemory<byte> dataMemory);
+        public abstract void Receive(Span<byte> dataBuffer);
+        public abstract void Send(ReadOnlySpan<byte> dataBuffer);
         #endregion Abstract Method
     }
 }

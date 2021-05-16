@@ -35,7 +35,7 @@ namespace HGServer.Network.Session
         /// <summary>
         /// Send Data to session
         /// </summary>
-        public void Send<TMessage>(TMessage message);
+        public void Send<TMessage>(ref TMessage message) where TMessage : struct;
 
         /// <summary>
         /// Disconnect Session

@@ -115,7 +115,7 @@ namespace HGServer.Network.Sockets
             }
         }
 
-        public override void Receive(Memory<byte> dataMemory)
+        public override void Receive(Span<byte> dataBuffer)
         {
             try
             {
@@ -128,7 +128,7 @@ namespace HGServer.Network.Sockets
                 if (_disposed)
                     throw new ObjectDisposedException(ToString());
 
-                var receivedSize = socket.Receive(dataMemory.Span, SocketFlags.None);
+                var receivedSize = socket.Receive(dataBuffer, SocketFlags.None);
                 onReceived?.Invoke(receivedSize, this);
             }
             catch(Exception e)
@@ -141,7 +141,7 @@ namespace HGServer.Network.Sockets
             }
         }
 
-        public override void Send(ReadOnlyMemory<byte> dataMemory)
+        public override void Send(ReadOnlySpan<byte> dataBuffer)
         {
             try
             {
@@ -154,7 +154,7 @@ namespace HGServer.Network.Sockets
                 if (_disposed)
                     throw new ObjectDisposedException(ToString());
 
-                var sendedSize = socket.Send(dataMemory.Span, SocketFlags.None);
+                var sendedSize = socket.Send(dataBuffer, SocketFlags.None);
                 onSended?.Invoke(sendedSize, this);
             }
             catch (Exception e)

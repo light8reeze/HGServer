@@ -4,6 +4,8 @@ using System.Text;
 using System.Net.Sockets;
 using HGServer.Network.Sockets;
 using HGServer.Network.Packet;
+using HGServer.Utility;
+using System.Runtime.InteropServices;
 
 namespace HGServer.Network.Session
 {
@@ -36,7 +38,7 @@ namespace HGServer.Network.Session
             socket = new TcpAsyncSocket();
             socket.Initialize();
 
-            receivedMessageQueue    = new MessageBuffer();
+            receiveBuffer    = new MessageBuffer();
         }
 
         public override void Accept()
@@ -84,10 +86,10 @@ namespace HGServer.Network.Session
             if (!socket.Connected) 
                 throw new Exception("Client Not Connected");
 
-            var writeMemory = receivedMessageQueue.GetWriteMemory();
+            var packetBuffer = receiveBuffer.GetWriteSpan();
             try
             {
-                socket?.Receive(writeMemory);
+                socket?.Receive(packetBuffer);
             }
             catch(Exception e)
             {
@@ -100,7 +102,7 @@ namespace HGServer.Network.Session
             base.OnReceived(message, sender);
         }
 
-        public override void Send<TMessage>(TMessage message)
+        public override void Send<TMessage>(ref TMessage message) where TMessage : struct
         {
             if (socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
@@ -108,11 +110,12 @@ namespace HGServer.Network.Session
             if (!socket.Connected) 
                 throw new Exception("Client Not Connected");
 
-            var messageSpan = new Span<TMessage>(message);
-            var sendMessage = MessageConverter.ConvertToByteArray(messageSpan);
             try
             {
-                socket?.Send(new ReadOnlyMemory<byte>(sendMessage.ToArray()));
+                var sendBuffer = SendMemory.Instance.DequeueMemory();
+                sendBuffer.Push(ref message);
+                var sendPacket = sendBuffer.GetBuffer();
+                socket?.Send(sendPacket);
             }
             catch (Exception e)
             {

@@ -82,14 +82,14 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// Receive Data from network
         /// </summary>
-        /// <param name="dataMemory">data buffer memory</param>
-        void Receive(Memory<byte> dataMemory);
+        /// <param name="dataBuffer">data buffer memory</param>
+        void Receive(Span<byte> dataBuffer);
 
         /// <summary>
         /// Send Data
         /// </summary>
-        /// <param name="dataMemory">send data buffer memory</param>
-        void Send(ReadOnlyMemory<byte> dataMemory);
+        /// <param name="dataBuffer">send data buffer memory</param>
+        void Send(ReadOnlySpan<byte> dataBuffer);
 
         /// <summary>
         /// Close socket

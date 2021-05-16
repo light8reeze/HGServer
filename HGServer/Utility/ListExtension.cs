@@ -27,5 +27,11 @@ namespace HGServer.Utility
         {
             return ListAccessor<T>.Getter(list);
         }
+
+        public static Span<T> GetListSpan<T>(this List<T> list)
+        {
+            var array = list.GetListArray();
+            return new Span<T>(array);
+        }
     }
 }

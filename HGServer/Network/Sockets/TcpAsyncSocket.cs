@@ -76,7 +76,7 @@ namespace HGServer.Network.Sockets
                 if (tcpAcceptSocket == null)
                     throw new NullReferenceException("Invalid TcpSocket");
 
-                var accepted = await SocketTaskExtensions.AcceptAsync(this.socket);
+                var accepted = await this.socket.AcceptAsync();
                 tcpAcceptSocket.socket = accepted;
                 onAccepted?.Invoke(tcpAcceptSocket, this);
             }
@@ -103,7 +103,7 @@ namespace HGServer.Network.Sockets
                 if (_disposed)
                     throw new ObjectDisposedException(ToString());
 
-                await SocketTaskExtensions.ConnectAsync(socket, ipAddress, port);
+                await socket.ConnectAsync(ipAddress, port);
                 onConnected?.Invoke(this);
             }
             catch (Exception e)
@@ -129,7 +129,7 @@ namespace HGServer.Network.Sockets
                 if (_disposed)
                     throw new ObjectDisposedException(ToString());
 
-                int receivedSize = await SocketTaskExtensions.ReceiveAsync(socket, dataMemory, SocketFlags.None);
+                int receivedSize = await socket.ReceiveAsync(dataMemory, SocketFlags.None);
                 onReceived?.Invoke(receivedSize, this);
             }
             catch (Exception e)
@@ -155,7 +155,7 @@ namespace HGServer.Network.Sockets
                 if (_disposed)
                     throw new ObjectDisposedException(ToString());
 
-                int sendedSize = await SocketTaskExtensions.SendAsync(socket, dataMemory, SocketFlags.None);
+                int sendedSize = await socket.SendAsync(dataMemory, SocketFlags.None);
                 onSended?.Invoke(sendedSize, this);
             }
             catch (Exception e)

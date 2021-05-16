@@ -132,10 +132,15 @@ namespace HGServer.Network.Packet
 
         public Memory<byte> GetWriteMemory()
         {
-            return _messageBuffer.AsMemory(_readIndex, _messageBuffer.Length - _readIndex);
+            return _messageBuffer.AsMemory(_writeIndex, _messageBuffer.Length - _writeIndex);
         }
 
         public Span<byte> GetWriteSpan()
+        {
+            return _messageBuffer.AsSpan(_writeIndex, _messageBuffer.Length - _writeIndex);
+        }
+
+        public ReadOnlySpan<byte> GetBuffer()
         {
             return _messageBuffer.AsSpan(_readIndex, _messageBuffer.Length - _readIndex);
         }
