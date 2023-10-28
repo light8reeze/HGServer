@@ -13,10 +13,10 @@ namespace HGServer.Network.Sockets
         {
             get
             {
-                if (socket == null)
+                if (_socket == null)
                     return false;
 
-                return socket.Connected;
+                return _socket.Connected;
             }
         }
         #endregion Properties
@@ -32,7 +32,7 @@ namespace HGServer.Network.Sockets
 
         public TcpSocket(Socket socket)
         {
-            this.socket = socket;
+            this._socket = socket;
         }
 
         ~TcpSocket()
@@ -44,19 +44,19 @@ namespace HGServer.Network.Sockets
         #region Method
         public override void Initialize()
         {
-            if (socket != null || socket.Connected)
+            if (null != _socket || true == _socket.Connected)
                 throw new Exception("Already Initialized");
 
-            if (_disposed)
+            if (true == _disposed)
                 throw new ObjectDisposedException(ToString());
 
-            if (socket == null)
-                socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
         }
 
         public override void Accept()
         {
             var tcpSocket = new TcpSocket();
+            tcpSocket.Initialize();
             Accept(tcpSocket);
         }
 
@@ -64,19 +64,22 @@ namespace HGServer.Network.Sockets
         {
             try
             {
+                if(socket is not TcpSocket)
+                    throw new InvalidOperationException("Not Initialized Client");
+
                 var tcpAcceptSocket = socket as TcpSocket;
 
-                if (socket == null)
+                if (null == socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException("Socket Disposed");
 
-                if (tcpAcceptSocket == null)
+                if (null == tcpAcceptSocket)
                     throw new NullReferenceException("Invalid TcpSocket");
 
-                var accepted = this.socket.Accept();
-                tcpAcceptSocket.socket = accepted;
+                var accepted = this._socket.Accept();
+                tcpAcceptSocket._socket = accepted;
                 onAccepted?.Invoke(tcpAcceptSocket, this);
             }
             catch(Exception e)
@@ -93,16 +96,16 @@ namespace HGServer.Network.Sockets
         {
             try
             {
-                if (socket == null)
+                if (null == _socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (socket.Connected)
+                if (true == _socket.Connected)
                     throw new Exception("Client Aleready Connected");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException(ToString());
 
-                socket.Connect(ipAddress, port);
+                _socket.Connect(ipAddress, port);
                 onConnected?.Invoke(this);
             }
             catch(Exception e)
@@ -115,20 +118,20 @@ namespace HGServer.Network.Sockets
             }
         }
 
-        public override void Receive(Span<byte> dataBuffer)
+        public override void Receive(Memory<byte> dataBuffer)
         {
             try
             {
-                if (socket == null)
+                if (null == _socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (!socket.Connected)
+                if (false == _socket.Connected)
                     throw new Exception("Client Aleready disconnected");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException(ToString());
 
-                var receivedSize = socket.Receive(dataBuffer, SocketFlags.None);
+                var receivedSize = _socket.Receive(dataBuffer.Span, SocketFlags.None);
                 onReceived?.Invoke(receivedSize, this);
             }
             catch(Exception e)
@@ -141,20 +144,20 @@ namespace HGServer.Network.Sockets
             }
         }
 
-        public override void Send(ReadOnlySpan<byte> dataBuffer)
+        public override void Send(ReadOnlyMemory<byte> dataBuffer)
         {
             try
             {
-                if (socket == null)
+                if (null == _socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (!socket.Connected)
+                if (false == _socket.Connected)
                     throw new Exception("Client Aleready disconnected");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException(ToString());
 
-                var sendedSize = socket.Send(dataBuffer, SocketFlags.None);
+                int sendedSize = _socket.Send(dataBuffer.Span, SocketFlags.None);
                 onSended?.Invoke(sendedSize, this);
             }
             catch (Exception e)
@@ -177,12 +180,12 @@ namespace HGServer.Network.Sockets
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed)
+            if (true == _disposed)
                 return;
 
-            if (disposing)
+            if (true == disposing)
             {
-                socket?.Dispose();
+                _socket?.Dispose();
             }
 
             _disposed = true;

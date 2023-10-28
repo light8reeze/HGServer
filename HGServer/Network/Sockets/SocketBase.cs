@@ -7,18 +7,48 @@ using HGServer.Utility;
 
 namespace HGServer.Network.Sockets
 {
-    abstract class SocketBase : ISocket
+    abstract class SocketBase : IDisposable
     {
-        #region Data Fields
-        protected Socket        socket;
-        #endregion Data Fields
+        #region Socket Delegate
+        /// <summary>
+        /// Accept callback
+        /// </summary>
+        /// <param name="acceptedSocket"></param>
+        /// <param name="sender">event object</param>
+        public delegate void AcceptedHandler(object acceptedSocket, object sender);
+
+        /// <summary>
+        /// socket connect callback
+        /// </summary>
+        public delegate void ConnectedHandler(object sender);
+
+        /// <summary>
+        /// receive callback
+        /// </summary>
+        /// <param name="dataSize">received size</param>
+        /// <param name="sender">event object</param>
+        public delegate void ReceivedHandler(int dataSize, object sender);
+
+        /// <summary>
+        /// send callback
+        /// </summary>
+        /// <param name="dataSize">sended size</param>
+        /// <param name="sender">event object</param>
+        public delegate void SendedHandler(int dataSize, object sender);
+
+        /// <summary>
+        /// socket close callback
+        /// </summary>
+        /// <param name="sender">event object</param>
+        public delegate void ClosedHandler(object sender);
+        #endregion Socket Delegate
 
         #region Event
         /// <summary>
         /// On Accepted event
         /// </summary>
-        protected ISocket.AcceptedHandler    onAccepted;
-        public event ISocket.AcceptedHandler OnAccepted
+        protected AcceptedHandler    onAccepted;
+        public event AcceptedHandler OnAccepted
         {
             add => onAccepted += value;
             remove => onAccepted -= value;
@@ -27,8 +57,8 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// On Accept event
         /// </summary>
-        protected ISocket.AcceptedHandler onAccept;
-        public event ISocket.AcceptedHandler OnAccept
+        protected AcceptedHandler onAccept;
+        public event AcceptedHandler OnAccept
         {
             add => onAccept += value;
             remove => onAccept -= value;
@@ -47,8 +77,8 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// On Received event
         /// </summary>
-        protected ISocket.ReceivedHandler    onReceived;
-        public event ISocket.ReceivedHandler OnReceived
+        protected ReceivedHandler    onReceived;
+        public event ReceivedHandler OnReceived
         {
             add => onReceived += value;
             remove => onReceived -= value;
@@ -67,8 +97,8 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// On Sended event
         /// </summary>
-        protected ISocket.SendedHander      onSended;
-        public event ISocket.SendedHander   OnSended
+        protected SendedHandler      onSended;
+        public event SendedHandler   OnSended
         {
             add => onSended += value;
             remove => onSended -= value;
@@ -87,8 +117,8 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// On Closed event
         /// </summary>
-        protected ISocket.ClosedHandler      onClosed;
-        public event ISocket.ClosedHandler   OnClosed
+        protected ClosedHandler      onClosed;
+        public event ClosedHandler   OnClosed
         {
             add => onClosed += value;
             remove => onClosed -= value;
@@ -97,13 +127,13 @@ namespace HGServer.Network.Sockets
         /// <summary>
         /// On Connected Event
         /// </summary>
-        protected ISocket.ConnectedHandler       onConnected;
-        public event ISocket.ConnectedHandler    OnConnected
+        protected ConnectedHandler       onConnected;
+        public event ConnectedHandler    OnConnected
         {
             add => onConnected += value;
             remove => onConnected -= value;
         }
-
+        
         /// <summary>
         /// On Connect Excpetion event
         /// </summary>
@@ -115,33 +145,38 @@ namespace HGServer.Network.Sockets
         }
         #endregion Event
 
+
+        #region Data Fields
+        protected Socket _socket;
+        #endregion Data Fields 
+
         #region Method
         public virtual void Bind(string ipAddress, int port)
         {
             var address = IPAddress.Parse(ipAddress);
             var iPEndPoint = new IPEndPoint(address, port);
 
-            socket.Bind(iPEndPoint);
+            _socket.Bind(iPEndPoint);
         }
         public virtual void Listen(int backLog = int.MaxValue)
         {
-            if (socket == null)
+            if (_socket == null)
                 throw new NullReferenceException("Not Initialized socket");
 
-            if (socket.Connected)
+            if (_socket.Connected)
                 throw new Exception("Client Aleready Connected");
 
-            socket.Listen(backLog);
+            _socket.Listen(backLog);
         }
         public virtual void Close()
         {
-            if (socket == null)
+            if (_socket == null)
                 throw new NullReferenceException("Not Initialized Client");
 
-            if (!socket.Connected)
+            if (!_socket.Connected)
                 throw new Exception("Client Aleready disconnected");
 
-            socket.Close();
+            _socket.Close();
             onClosed?.Invoke(this);
         }
         #endregion Method
@@ -152,8 +187,8 @@ namespace HGServer.Network.Sockets
         public abstract void Accept(object socket);
         public abstract void Connect(string ipAddress, int port);
         public abstract void Dispose();
-        public abstract void Receive(Span<byte> dataBuffer);
-        public abstract void Send(ReadOnlySpan<byte> dataBuffer);
+        public abstract void Receive(Memory<byte> dataMemory);
+        public abstract void Send(ReadOnlyMemory<byte> dataMemory);
         #endregion Abstract Method
     }
 }

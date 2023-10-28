@@ -6,16 +6,19 @@ using HGServer.Network.Sockets;
 using HGServer.Network.Packet;
 using HGServer.Utility;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Diagnostics;
 
 namespace HGServer.Network.Session
 {
     /// <summary>
     /// Tcp Game Session Class
     /// </summary>
-    class TcpNetworkSession : NetworkSession<TcpAsyncSocket>
+    class TcpNetworkSession : NetworkSession<TcpSocket>
     {
         #region Data Field
-        private bool _disposed = false;
+        private bool    _disposed = false;
+        private int     _sendCount = 0;
         #endregion Data Field
 
         #region Constructor & Destructor
@@ -32,20 +35,20 @@ namespace HGServer.Network.Session
         #region Method
         public override void Initialize()
         {
-            if (socket != null || socket.Connected)
+            if (_socket != null || _socket.Connected == true)
                 throw new Exception("Already Initialized");
 
-            socket = new TcpAsyncSocket();
-            socket.Initialize();
+            _socket = new TcpSocket();
+            _socket.Initialize();
 
-            receiveBuffer    = new MessageBuffer();
+            _receiveBuffer    = new MessageBuffer();
         }
 
         public override void Accept()
         {
             try
             {
-                socket?.Accept();
+                _socket?.Accept();
             }
             catch(Exception e)
             {
@@ -58,38 +61,39 @@ namespace HGServer.Network.Session
 
         public override void Connect(string ipAddress, int port)
         {
-            if (socket == null) 
+            if (_socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (socket.Connected) 
+            if (_socket.Connected == true) 
                 throw new Exception("Client Aleready Connected");
 
-            socket.Connect(ipAddress, port);
+            _socket.Connect(ipAddress, port);
         }
 
         public override void Disconnect()
         {
-            if (socket == null) 
+            if (_socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (!socket.Connected) 
+            if (_socket.Connected == false) 
                 throw new Exception("Client Aleready disconnected");
 
-            socket.Close();
+            _socket.Close();
         }
 
         public override void Receive()
         {
-            if (socket == null) 
+            if (_socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (!socket.Connected) 
+            if (_socket.Connected == false) 
                 throw new Exception("Client Not Connected");
 
-            var packetBuffer = receiveBuffer.GetWriteSpan();
+            var packetBuffer = _receiveBuffer.GetWriteMemory();
+            
             try
             {
-                socket?.Receive(packetBuffer);
+                _socket?.Receive(packetBuffer);
             }
             catch(Exception e)
             {
@@ -102,20 +106,68 @@ namespace HGServer.Network.Session
             base.OnReceived(message, sender);
         }
 
+        public override void OnSended(Message message, object sender)
+        {
+            base.OnSended(message, sender);
+
+            MessageSender nextMessage;
+            _sendQueue.TryDequeue(out nextMessage);
+
+            Debug.Assert(nextMessage.TryGetMessage().MessageNo == message.MessageNo);
+
+            // 해당 내용도 수정 필요
+            if (0 < Interlocked.Decrement(ref _sendCount))
+            {
+                if (_sendQueue.TryPeek(out nextMessage))
+                    Send(nextMessage.GetReadOnlyMemory());
+            }
+        }
+
+        public override void PushMessage(MessageSender messageSender)
+        {
+            base.PushMessage(messageSender);
+
+            if(1 == Interlocked.Add(ref _sendCount, 1))
+            {
+                MessageSender nextMessage;
+                if(_sendQueue.TryPeek(out nextMessage))
+                    Send(nextMessage.GetReadOnlyMemory());
+            }
+        }
+
         public override void Send<TMessage>(ref TMessage message) where TMessage : struct
         {
-            if (socket == null) 
+            if (_socket == null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (!socket.Connected) 
+            if (_socket.Connected == false) 
                 throw new Exception("Client Not Connected");
 
             try
             {
-                var sendBuffer = SendMemory.Instance.DequeueMemory();
+                var sendBuffer = SendBufferPool.Instance.AllocBuffer();
                 sendBuffer.Push(ref message);
-                var sendPacket = sendBuffer.GetBuffer();
-                socket?.Send(sendPacket);
+                var sendPacket = sendBuffer.GetReadMemory();
+                _socket?.Send(sendPacket);
+            }
+            catch (Exception e)
+            {
+                _sendException?.Invoke(this, e);
+            }
+        }
+ 
+
+        public override void Send(ReadOnlyMemory<byte> data)
+        {
+            if (_socket == null)
+                throw new NullReferenceException("Not Initialized Client");
+
+            if (_socket.Connected == false)
+                throw new Exception("Client Not Connected");
+
+            try
+            {
+                _socket?.Send(data);
             }
             catch (Exception e)
             {
@@ -133,14 +185,10 @@ namespace HGServer.Network.Session
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed)
+            if (_disposed == true)
                 return;
 
-            if (disposing)
-            {
-                socket?.Dispose();
-            }
-
+            _socket?.Dispose();
             _disposed = true;
         }
         #endregion Implement IDisposable

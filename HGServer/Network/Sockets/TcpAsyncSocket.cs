@@ -1,84 +1,45 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+using System.Linq;
 using System.Net.Sockets;
-using System.Net;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace HGServer.Network.Sockets
 {
-    class TcpAsyncSocket : AsyncSocketBase
+    internal class TcpAsyncSocket : TcpSocket
     {
-        #region Properties
-        public bool Connected
-        {
-            get
-            {
-                if (socket == null)
-                    return false;
-
-                return socket.Connected;
-            }
-        }
-        #endregion Properties
-
         #region Data Fields
+        
         private bool _disposed = false;
+
+        public bool IsAwaitMode { get; set; } = true;
+        
         #endregion Data Fields
 
-        #region Constructor & Destructor
-        public TcpAsyncSocket()
-        {
-        }
-
-        public TcpAsyncSocket(Socket socket)
-        {
-            this.socket = socket;
-        }
-
-        ~TcpAsyncSocket()
-        {
-            Dispose(false);
-        }
-        #endregion Constructor & Destructor
-
         #region Method
-        public override void Initialize()
+
+        public ValueTask<Socket> AcceptAsync()
         {
-            if (socket != null || socket.Connected)
-                throw new Exception("Already Initialized");
-
-            if (_disposed)
-                throw new ObjectDisposedException(ToString());
-
-            if (socket == null)
-                socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            TcpAsyncSocket tcpAsyncSocket = new TcpAsyncSocket();
+            tcpAsyncSocket.Initialize();
+            return AcceptAsync(tcpAsyncSocket);
         }
+  
 
-        public override async Task AcceptAsync()
-        {
-            var tcpSocket = new TcpAsyncSocket();
-            await AcceptAsync(tcpSocket);
-        }
-
-        public override async Task AcceptAsync(object socket)
+        public async ValueTask<Socket> AcceptAsync(TcpAsyncSocket asyncSocket)
         {
             try
             {
-                var tcpAcceptSocket = socket as TcpAsyncSocket;
+                CancellationToken cancellationToken = new CancellationToken();
+                ValueTask<Socket> task = _socket.AcceptAsync(asyncSocket._socket, cancellationToken);
 
-                if (socket == null)
-                    throw new NullReferenceException("Not Initialized Client");
-
-                if (_disposed)
-                    throw new ObjectDisposedException("Socket Disposed");
-
-                if (tcpAcceptSocket == null)
-                    throw new NullReferenceException("Invalid TcpSocket");
-
-                var accepted = await this.socket.AcceptAsync();
-                tcpAcceptSocket.socket = accepted;
-                onAccepted?.Invoke(tcpAcceptSocket, this);
+                await task.ConfigureAwait(false);
+                onAccepted?.Invoke(asyncSocket, this);
+                return task.Result;
             }
             catch (Exception e)
             {
@@ -88,49 +49,29 @@ namespace HGServer.Network.Sockets
             {
                 Close();
             }
+
+            return null;
         }
 
-        public override async Task ConnectAsync(string ipAddress, int port)
+        public async ValueTask<int> ReceiveAsync(Memory<byte> dataBuffer)
         {
             try
             {
-                if (socket == null)
+                if (null == _socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (socket.Connected)
-                    throw new Exception("Client Aleready Connected");
-
-                if (_disposed)
-                    throw new ObjectDisposedException(ToString());
-
-                await socket.ConnectAsync(ipAddress, port);
-                onConnected?.Invoke(this);
-            }
-            catch (Exception e)
-            {
-                onConnectException?.Invoke(this, e);
-            }
-            finally
-            {
-                Close();
-            }
-        }
-
-        public override async Task ReceiveAsync(Memory<byte> dataMemory)
-        {
-            try
-            {
-                if (socket == null)
-                    throw new NullReferenceException("Not Initialized Client");
-
-                if (!socket.Connected)
+                if (false == _socket.Connected)
                     throw new Exception("Client Aleready disconnected");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException(ToString());
 
-                int receivedSize = await socket.ReceiveAsync(dataMemory, SocketFlags.None);
-                onReceived?.Invoke(receivedSize, this);
+                ValueTask<int> task = _socket.ReceiveAsync(dataBuffer, SocketFlags.None);
+                await task.ConfigureAwait(false);
+
+                onReceived?.Invoke(task.Result, this);
+
+                return task.Result;
             }
             catch (Exception e)
             {
@@ -140,23 +81,30 @@ namespace HGServer.Network.Sockets
             {
                 Close();
             }
+
+            return 0;
         }
 
-        public override async Task SendAsync(ReadOnlyMemory<byte> dataMemory)
+
+        public async ValueTask<int> SendAsync(ReadOnlyMemory<byte> dataBuffer)
         {
             try
             {
-                if (socket == null)
+                if (null == _socket)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (!socket.Connected)
+                if (false == _socket.Connected)
                     throw new Exception("Client Aleready disconnected");
 
-                if (_disposed)
+                if (true == _disposed)
                     throw new ObjectDisposedException(ToString());
 
-                int sendedSize = await socket.SendAsync(dataMemory, SocketFlags.None);
-                onSended?.Invoke(sendedSize, this);
+                var task = _socket.SendAsync(dataBuffer, SocketFlags.None);
+                await task.ConfigureAwait(false);
+
+                onSended?.Invoke(task.Result, this);
+
+                return task.Result;
             }
             catch (Exception e)
             {
@@ -166,28 +114,10 @@ namespace HGServer.Network.Sockets
             {
                 Close();
             }
+
+            return 0;
         }
+
         #endregion Method
-
-        #region Implement IDisposable
-        public override void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (_disposed)
-                return;
-
-            if (disposing)
-            {
-                socket?.Dispose();
-            }
-
-            _disposed = true;
-        }
-        #endregion Implement IDisposable
     }
 }

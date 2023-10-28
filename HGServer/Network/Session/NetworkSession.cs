@@ -1,18 +1,20 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using HGServer.Network.Packet;
+using HGServer.Network.Sockets;
 using HGServer.Utility;
 
 namespace HGServer.Network.Session
 {
-    abstract class NetworkSession<T> : INetworkSession<T>
+    abstract class NetworkSession<T> : INetworkSession<T> where T : SocketBase
     {
         #region Data Fields
         
-        protected T                 socket;
-        protected MessageBuffer     receiveBuffer;
-        protected MessageBuffer     sendBuffer;
+        protected T                                 _socket;
+        protected MessageBuffer                     _receiveBuffer;
+        protected ConcurrentQueue<MessageSender>    _sendQueue = new ConcurrentQueue<MessageSender>();
 
         #endregion Data Fields
 
@@ -191,6 +193,11 @@ namespace HGServer.Network.Session
         public virtual void OnDisconnected(object sender)
         {
         }
+
+        public virtual void PushMessage(MessageSender messageSender)
+        {
+            _sendQueue.Enqueue(messageSender);
+        }
         #endregion Method
 
         #region Abstract Method
@@ -201,6 +208,8 @@ namespace HGServer.Network.Session
         public abstract void Initialize();
         public abstract void Receive();
         public abstract void Send<TMessage>(ref TMessage message) where TMessage : struct;
+        public abstract void Send(ReadOnlyMemory<byte> messageBuffer);
+
         #endregion Abstract Method
     }
 }

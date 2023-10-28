@@ -7,7 +7,7 @@ namespace HGServer.Network.Packet
 {
     class MessageConverter
     {
-        private static Dictionary<int, Type> _messageTypeList;
+        private static Dictionary<int, Type> _messageTypeList = new Dictionary<int, Type>();
 
         internal static void InsertMessageType(int messageNo, Type messageType)
         {

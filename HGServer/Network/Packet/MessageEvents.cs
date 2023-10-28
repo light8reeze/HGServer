@@ -49,7 +49,7 @@ namespace HGServer.Network.Packet
 
     class MessageEvents
     {
-        private static Dictionary<int, Dictionary<string, MessageEvent>> _eventList;
+        private static Dictionary<int, Dictionary<string, MessageEvent>> _eventList = new Dictionary<int, Dictionary<string, MessageEvent>>();
 
         public delegate void MessageEventDelegate();
 

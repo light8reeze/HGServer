@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.Text;
 using HGServer.Network.Session;
 
-namespace HGServer.Game
+namespace HGServer.App
 {
     /// <summary>
     /// Game user interface
     /// </summary>
-    public interface IGameUser<TSession> where TSession : INetworkSession<TSession>
+    public interface IGameObject 
     {
     }
 }

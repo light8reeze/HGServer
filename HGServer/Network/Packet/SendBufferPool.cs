@@ -1,19 +1,20 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using HGServer.Utility;
 
 namespace HGServer.Network.Packet
 {
-    class SendMemory : Singleton<SendMemory>
+    class SendBufferPool : Singleton<SendBufferPool>
     {
         #region Constant
-        public readonly int DefaultSendSize         = 1024;
-        public readonly int DefaultSendBufferCount  = 50;
+        public readonly int DefaultSendSize = 1024;
+        public readonly int DefaultSendBufferCount = 50;
         #endregion Constant
 
         #region Data Field
-        private Queue<MessageBuffer>    _bufferQueue;
+        private ConcurrentQueue<MessageBuffer> _bufferQueue;
         #endregion Data Field
 
         #region Property
@@ -31,9 +32,9 @@ namespace HGServer.Network.Packet
         #endregion Property
 
         #region Constructor
-        public SendMemory()
+        public SendBufferPool()
         {
-            _bufferQueue = new Queue<MessageBuffer>();
+            _bufferQueue = new ConcurrentQueue<MessageBuffer>();
         }
         #endregion Constructor
 
@@ -53,13 +54,17 @@ namespace HGServer.Network.Packet
             SendMaxCount = bufferCount;
         }
 
-        public MessageBuffer DequeueMemory()
+        public MessageBuffer AllocBuffer()
         {
-            var buffer = _bufferQueue.Dequeue();
-            return buffer;
+            MessageBuffer messageBuffer = null;
+            bool success = _bufferQueue.TryDequeue(out messageBuffer);
+            if(false == success)
+                throw new OutOfMemoryException();
+            
+            return messageBuffer;
         }
 
-        public void EnqueueMemory(MessageBuffer buffer)
+        public void ReturnBuffer(MessageBuffer buffer)
         {
             _bufferQueue.Enqueue(buffer);
         }

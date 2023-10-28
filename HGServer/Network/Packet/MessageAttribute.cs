@@ -33,5 +33,5 @@ namespace HGServer.Network.Packet
             get;
             set;
         }
-    }
+    }  
 }
