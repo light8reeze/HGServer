@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HGServer.Network.Packet
+namespace HGServer.Network.Messages
 {
     internal class MessageSender : IDisposable
     {
@@ -23,7 +23,7 @@ namespace HGServer.Network.Packet
             _sendBuffer?.Push(ref message);
         }
 
-        public void Send<T>(NetworkSession<T> session) where T : SocketBase
+        public void Send<T>(NetworkSession<T> session) where T : Socket
         {
             session.PushMessage(this);
         }
@@ -40,7 +40,7 @@ namespace HGServer.Network.Packet
 
         protected virtual void Dispose(bool disposing)
         {
-            if (true == _disposed)
+            if (_disposed is true)
                 return;
 
             _disposed = true;

@@ -7,7 +7,7 @@ using HGServer.Utility;
 
 namespace HGServer.Network.Sockets
 {
-    abstract class SocketBase : IDisposable
+    abstract class Socket : IDisposable
     {
         #region Socket Delegate
         /// <summary>
@@ -15,32 +15,37 @@ namespace HGServer.Network.Sockets
         /// </summary>
         /// <param name="acceptedSocket"></param>
         /// <param name="sender">event object</param>
-        public delegate void AcceptedHandler(object acceptedSocket, object sender);
+        public delegate void AcceptedHandler(Socket acceptedSocket, Socket sender);
 
         /// <summary>
         /// socket connect callback
         /// </summary>
-        public delegate void ConnectedHandler(object sender);
+        public delegate void ConnectedHandler(Socket sender);
+
+        /// <summary>
+        /// socket Disconnect callback
+        /// </summary>
+        public delegate void DisconnectedHandler(Socket sender);
 
         /// <summary>
         /// receive callback
         /// </summary>
         /// <param name="dataSize">received size</param>
         /// <param name="sender">event object</param>
-        public delegate void ReceivedHandler(int dataSize, object sender);
+        public delegate void ReceivedHandler(int dataSize, Socket sender);
 
         /// <summary>
         /// send callback
         /// </summary>
         /// <param name="dataSize">sended size</param>
         /// <param name="sender">event object</param>
-        public delegate void SendedHandler(int dataSize, object sender);
+        public delegate void SendedHandler(int dataSize, Socket sender);
 
         /// <summary>
         /// socket close callback
         /// </summary>
         /// <param name="sender">event object</param>
-        public delegate void ClosedHandler(object sender);
+        public delegate void ClosedHandler(Socket sender);
         #endregion Socket Delegate
 
         #region Event
@@ -133,7 +138,17 @@ namespace HGServer.Network.Sockets
             add => onConnected += value;
             remove => onConnected -= value;
         }
-        
+
+        /// <summary>
+        /// On Connected Event
+        /// </summary>
+        protected DisconnectedHandler onDisconnected;
+        public event DisconnectedHandler OnDisconnected
+        {
+            add => onDisconnected += value;
+            remove => onDisconnected -= value;
+        }
+
         /// <summary>
         /// On Connect Excpetion event
         /// </summary>
@@ -147,7 +162,7 @@ namespace HGServer.Network.Sockets
 
 
         #region Data Fields
-        protected Socket _socket;
+        protected System.Net.Sockets.Socket _socket;
         #endregion Data Fields 
 
         #region Method
@@ -184,8 +199,9 @@ namespace HGServer.Network.Sockets
         #region Abstract Method
         public abstract void Initialize();
         public abstract void Accept();
-        public abstract void Accept(object socket);
+        public abstract void Accept(Socket socket);
         public abstract void Connect(string ipAddress, int port);
+        public abstract void Disconnect();
         public abstract void Dispose();
         public abstract void Receive(Memory<byte> dataMemory);
         public abstract void Send(ReadOnlyMemory<byte> dataMemory);

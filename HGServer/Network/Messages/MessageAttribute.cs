@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace HGServer.Network.Packet
+namespace HGServer.Network.Messages
 {
     [AttributeUsage(AttributeTargets.Struct, AllowMultiple = true)]
     class MessageTypeAttribute : Attribute

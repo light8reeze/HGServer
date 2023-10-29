@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net.Sockets;
 using HGServer.Network.Sockets;
-using HGServer.Network.Packet;
+using HGServer.Network.Messages;
 using HGServer.Utility;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -35,7 +35,7 @@ namespace HGServer.Network.Session
         #region Method
         public override void Initialize()
         {
-            if (_socket != null || _socket.Connected == true)
+            if (_socket is null || _socket.Connected is true)
                 throw new Exception("Already Initialized");
 
             _socket = new TcpSocket();
@@ -61,10 +61,10 @@ namespace HGServer.Network.Session
 
         public override void Connect(string ipAddress, int port)
         {
-            if (_socket == null) 
+            if (_socket is null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (_socket.Connected == true) 
+            if (_socket.Connected is true) 
                 throw new Exception("Client Aleready Connected");
 
             _socket.Connect(ipAddress, port);
@@ -72,21 +72,21 @@ namespace HGServer.Network.Session
 
         public override void Disconnect()
         {
-            if (_socket == null) 
+            if (_socket is null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (_socket.Connected == false) 
+            if (_socket.Connected is false) 
                 throw new Exception("Client Aleready disconnected");
 
-            _socket.Close();
+            _socket.Disconnect();
         }
 
         public override void Receive()
         {
-            if (_socket == null) 
+            if (_socket is null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (_socket.Connected == false) 
+            if (_socket.Connected is false) 
                 throw new Exception("Client Not Connected");
 
             var packetBuffer = _receiveBuffer.GetWriteMemory();
@@ -99,6 +99,14 @@ namespace HGServer.Network.Session
             {
                 _receiveException?.Invoke(this, e);
             }
+        }
+
+        public override void Close()
+        {
+            if (_socket is null)
+                throw new NullReferenceException("Not Initialized Client");
+
+            _socket?.Close();
         }
 
         public override void OnReceived(Message message, object sender)
@@ -137,10 +145,10 @@ namespace HGServer.Network.Session
 
         public override void Send<TMessage>(ref TMessage message) where TMessage : struct
         {
-            if (_socket == null) 
+            if (_socket is null) 
                 throw new NullReferenceException("Not Initialized Client");
             
-            if (_socket.Connected == false) 
+            if (_socket.Connected is false) 
                 throw new Exception("Client Not Connected");
 
             try
@@ -159,10 +167,10 @@ namespace HGServer.Network.Session
 
         public override void Send(ReadOnlyMemory<byte> data)
         {
-            if (_socket == null)
+            if (_socket is null)
                 throw new NullReferenceException("Not Initialized Client");
 
-            if (_socket.Connected == false)
+            if (_socket.Connected is false)
                 throw new Exception("Client Not Connected");
 
             try
@@ -185,7 +193,7 @@ namespace HGServer.Network.Session
 
         protected virtual void Dispose(bool disposing)
         {
-            if (_disposed == true)
+            if (_disposed is true)
                 return;
 
             _socket?.Dispose();

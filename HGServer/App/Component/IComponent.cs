@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace HGServer.App
 {
-    interface IGameApplication
+    interface IComponent
     {
         public bool Initialize();
 
-        public bool Start();
-
-        public bool Run();
-
-        public bool Close();
+        public bool Finalize();
     }
 }

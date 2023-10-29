@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace HGServer.Network.Packet
+namespace HGServer.Network.Messages
 {
     class MessageConverter
     {

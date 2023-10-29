@@ -22,7 +22,7 @@ namespace HGServer.Network.Sockets
 
         #region Method
 
-        public ValueTask<Socket> AcceptAsync()
+        public ValueTask<System.Net.Sockets.Socket> AcceptAsync()
         {
             TcpAsyncSocket tcpAsyncSocket = new TcpAsyncSocket();
             tcpAsyncSocket.Initialize();
@@ -30,12 +30,12 @@ namespace HGServer.Network.Sockets
         }
   
 
-        public async ValueTask<Socket> AcceptAsync(TcpAsyncSocket asyncSocket)
+        public async ValueTask<System.Net.Sockets.Socket> AcceptAsync(TcpAsyncSocket asyncSocket)
         {
             try
             {
                 CancellationToken cancellationToken = new CancellationToken();
-                ValueTask<Socket> task = _socket.AcceptAsync(asyncSocket._socket, cancellationToken);
+                ValueTask<System.Net.Sockets.Socket> task = _socket.AcceptAsync(asyncSocket._socket, cancellationToken);
 
                 await task.ConfigureAwait(false);
                 onAccepted?.Invoke(asyncSocket, this);
@@ -57,13 +57,13 @@ namespace HGServer.Network.Sockets
         {
             try
             {
-                if (null == _socket)
+                if (_socket is null)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (false == _socket.Connected)
+                if (_socket.Connected is false)
                     throw new Exception("Client Aleready disconnected");
 
-                if (true == _disposed)
+                if (_disposed is true)
                     throw new ObjectDisposedException(ToString());
 
                 ValueTask<int> task = _socket.ReceiveAsync(dataBuffer, SocketFlags.None);
@@ -90,13 +90,13 @@ namespace HGServer.Network.Sockets
         {
             try
             {
-                if (null == _socket)
+                if (_socket is null)
                     throw new NullReferenceException("Not Initialized Client");
 
-                if (false == _socket.Connected)
+                if (_socket.Connected is false)
                     throw new Exception("Client Aleready disconnected");
 
-                if (true == _disposed)
+                if (_disposed is true)
                     throw new ObjectDisposedException(ToString());
 
                 var task = _socket.SendAsync(dataBuffer, SocketFlags.None);

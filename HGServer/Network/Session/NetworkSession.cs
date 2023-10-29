@@ -2,13 +2,13 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
-using HGServer.Network.Packet;
+using HGServer.Network.Messages;
 using HGServer.Network.Sockets;
 using HGServer.Utility;
 
 namespace HGServer.Network.Session
 {
-    abstract class NetworkSession<T> : INetworkSession<T> where T : SocketBase
+    abstract class NetworkSession<T> : INetworkSession<T> where T : Socket
     {
         #region Data Fields
         
@@ -87,7 +87,7 @@ namespace HGServer.Network.Session
         /// <summary>
         /// On Sended event
         /// </summary>
-        protected DataTransferHandler         _dataSended;
+        protected DataTransferHandler       _dataSended;
         public event DataTransferHandler    DataSended
         {
             add => _dataSended += value;
@@ -205,6 +205,7 @@ namespace HGServer.Network.Session
         public abstract void Connect(string ipAddress, int port);
         public abstract void Disconnect();
         public abstract void Dispose();
+        public abstract void Close();
         public abstract void Initialize();
         public abstract void Receive();
         public abstract void Send<TMessage>(ref TMessage message) where TMessage : struct;

@@ -6,8 +6,10 @@ using System.Threading.Tasks;
 
 namespace HGServer.App
 {
-    interface IGameBuilder
+    internal interface INetworkService
     {
-        IGameApplication Build();
+        public bool OnAppInitialize();
+        public bool StartService();
+        public void CloseService();
     }
 }

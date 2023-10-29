@@ -1,5 +1,5 @@
 ﻿using System;
-using HGServer.Network.Packet;
+using HGServer.Network.Messages;
 
 namespace HGServer.Network.Session
 {

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using HGServer.Utility;
 
-namespace HGServer.Network.Packet
+namespace HGServer.Network.Messages
 {
     class SendBufferPool : Singleton<SendBufferPool>
     {
@@ -56,7 +56,7 @@ namespace HGServer.Network.Packet
 
         public MessageBuffer AllocBuffer()
         {
-            MessageBuffer messageBuffer = null;
+            MessageBuffer messageBuffer;
             bool success = _bufferQueue.TryDequeue(out messageBuffer);
             if(false == success)
                 throw new OutOfMemoryException();

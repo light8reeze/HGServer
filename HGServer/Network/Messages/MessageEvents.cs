@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using HGServer.Utility;
 
-namespace HGServer.Network.Packet
+namespace HGServer.Network.Messages
 {
     /// <summary>
     /// Event Target enum
@@ -55,7 +55,7 @@ namespace HGServer.Network.Packet
 
         public static void AddEvent(int messageType, MessageEvent messageEvent)
         {
-            if (_eventList.ContainsKey(messageType) == false)
+            if (_eventList.ContainsKey(messageType) is false)
             {
                 _eventList.Add(messageType, new Dictionary<string, MessageEvent>());
             }

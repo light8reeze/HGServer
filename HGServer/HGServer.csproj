@@ -8,8 +8,4 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Utility\Thread\" />
-  </ItemGroup>
-
 </Project>
