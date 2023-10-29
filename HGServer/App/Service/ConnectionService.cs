@@ -1,6 +1,5 @@
 ﻿using HGServer.Network.Session;
 using HGServer.Network.Sockets;
-using Microsoft.Extensions.ObjectPool;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +43,6 @@ namespace HGServer.App.Service
 
                     _connectorDictionary.Add(config.ConnectionID, connector);
                 }
-                ObjectPool<T>
             }
             catch(Exception e) 
             {
