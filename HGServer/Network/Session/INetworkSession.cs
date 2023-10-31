@@ -6,8 +6,7 @@ namespace HGServer.Network.Session
     /// <summary>
     /// Network Session interface
     /// </summary>
-    /// <typeparam name="T">Socket Class</typeparam>
-    public interface INetworkSession<T> : IDisposable 
+    public interface INetworkSession : IDisposable 
     {
         #region Method
         /// <summary>
@@ -46,7 +45,6 @@ namespace HGServer.Network.Session
         /// Disconnect Session
         /// </summary>
         public void Disconnect();
-        void OnReceived(Message message, object sender);
         #endregion Method
     }
 }

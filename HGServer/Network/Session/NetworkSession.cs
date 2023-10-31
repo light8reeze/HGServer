@@ -8,11 +8,11 @@ using HGServer.Utility;
 
 namespace HGServer.Network.Session
 {
-    abstract class NetworkSession<T> : INetworkSession<T> where T : Socket
+    abstract class NetworkSession<T> : INetworkSession where T : SocketBase
     {
         #region Data Fields
         
-        protected T                                 _socket;
+        protected T                                 _socket = default;
         protected MessageBuffer                     _receiveBuffer;
         protected ConcurrentQueue<MessageSender>    _sendQueue = new ConcurrentQueue<MessageSender>();
 
@@ -22,15 +22,15 @@ namespace HGServer.Network.Session
         /// <summary>
         /// Session Connect callback
         /// </summary>
-        /// <param name="sender">connection event session</param>
-        public delegate void ConnectionEventHandler(object sender);
+        /// <param name="session">connection event session</param>
+        public delegate void ConnectionEventHandler(INetworkSession session);
 
         /// <summary>
         /// Session Message IO callback
         /// </summary>
         /// <param name="message">IO Completed Message</param>
-        /// <param name="sender">IO Completed Object</param>
-        public delegate void DataTransferHandler(Message message, object sender);
+        /// <param name="session">IO Completed Object</param>
+        public delegate void DataTransferHandler(Message message, INetworkSession session);
         #endregion Session Delegate
 
         #region Event
@@ -162,38 +162,43 @@ namespace HGServer.Network.Session
         #region Constructor
         public NetworkSession()
         {
-            SessionAccept   += OnAccept;
-            SessionAccepted += OnAccepted;
-            DataReceived    += OnReceived;
-            DataSended      += OnSended;
-            SessionDisconnect   += OnDisconnect;
-            SessionDisconnected += OnDisconnected;
+            _socket = default;
+
+            SetSocketEvent();
         }
         #endregion Constructor
 
-        #region Method
-        public virtual void OnAccept(object sender)
+        #region Socket Event Method
+        private void SetSocketEvent()
         {
-        }
-        public virtual void OnAccepted(object sender)
-        {
-        }
-        public virtual void OnReceived(Message message, object sender)
-        {
-        }
-        public virtual void OnSended(Message message, object sender)
-        {
-        }
-        public virtual void OnConnected(object sender)
-        {
-        }
-        public virtual void OnDisconnect(object sender)
-        {
-        }
-        public virtual void OnDisconnected(object sender)
-        {
+            if (_socket is null)
+                return;
+
+            _socket.OnAccepted += OnSocketAccepted;
+            _socket.OnReceived += OnReceiveComplete;
+            _socket.OnDisconnected += OnDisconnected;
+            _socket.OnSended += OnSendComplete;
+            _socket.OnConnected += OnConnected;
         }
 
+        public virtual void OnSocketAccepted(SocketBase acceptedSocket, SocketBase sender)
+        {
+        }
+        public virtual void OnReceiveComplete(int dataSize, SocketBase sender)
+        {
+        }
+        public virtual void OnSendComplete(int dataSize, SocketBase sender)
+        {
+        }
+        public virtual void OnConnected(SocketBase sender)
+        {
+        }
+        public virtual void OnDisconnected(SocketBase sender)
+        {
+        }
+        #endregion Socket Event Method
+
+        #region Method
         public virtual void PushMessage(MessageSender messageSender)
         {
             _sendQueue.Enqueue(messageSender);

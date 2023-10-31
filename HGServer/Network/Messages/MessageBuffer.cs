@@ -23,6 +23,8 @@ namespace HGServer.Network.Messages
         private int _writeIndex;
         #endregion Data Fields
 
+        public int Length => _writeIndex - _readIndex;
+
         #region Constructor
         public MessageBuffer()
         {
@@ -38,7 +40,7 @@ namespace HGServer.Network.Messages
         #region Method
         public void Initialize(int size)
         {
-            _messageBuffer = GC.AllocateArray<byte>(size, true);
+            _messageBuffer = GC.AllocateArray<byte>(size, pinned: true);
             Clear();
         }
 
@@ -51,23 +53,32 @@ namespace HGServer.Network.Messages
 
         public Span<byte> Pop()
         {
-            var readSpan = _messageBuffer.AsSpan(_readIndex, _writeIndex);
+            var readSpan = _messageBuffer.AsSpan(_readIndex, Length);
             _readIndex += readSpan.Length;
 
             return readSpan;
         }
 
-        public Message TryGetMessage()
+        public Span<byte> Pop(int length)
         {
+            if (_writeIndex <= _readIndex + length)
+                length = Length;
+
+            var readSpan = _messageBuffer.AsSpan(_readIndex, length);
+            _readIndex += length;
+
+            return readSpan;
+        }
+
+        public bool TryPeekMessage(out Message msg)
+        {
+            msg = default;
+
             if (_writeIndex - _readIndex < Marshal.SizeOf<Message>())
-                return new Message();
+                return false;
 
-            Message msg;
             var readSpan = _messageBuffer.AsSpan(_readIndex, _writeIndex);
-            if (MemoryMarshal.TryRead(readSpan, out msg))
-                return msg;
-
-            return new Message();
+            return (MemoryMarshal.TryRead(readSpan, out msg));
         }
 
         public void Push(byte[] data)
@@ -157,6 +168,7 @@ namespace HGServer.Network.Messages
 
             return _messageBuffer.AsMemory(_readIndex, _writeIndex);
         }
+
         #endregion Method
     }
 }

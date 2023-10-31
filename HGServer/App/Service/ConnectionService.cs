@@ -44,7 +44,7 @@ namespace HGServer.App.Service
                     _connectorDictionary.Add(config.ConnectionID, connector);
                 }
             }
-            catch(Exception e) 
+            catch(Exception e)
             {
                 Console.WriteLine(e.Message);
 

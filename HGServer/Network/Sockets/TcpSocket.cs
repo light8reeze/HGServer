@@ -6,7 +6,7 @@ using System.Net;
 
 namespace HGServer.Network.Sockets
 {
-    class TcpSocket : Socket
+    class TcpSocket : SocketBase
     {
         #region Properties
         public bool Connected
@@ -60,7 +60,7 @@ namespace HGServer.Network.Sockets
             Accept(tcpSocket);
         }
 
-        public override void Accept(Socket socket)
+        public override void Accept(SocketBase socket)
         {
             try
             {

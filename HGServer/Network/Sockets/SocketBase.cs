@@ -7,7 +7,7 @@ using HGServer.Utility;
 
 namespace HGServer.Network.Sockets
 {
-    abstract class Socket : IDisposable
+    abstract class SocketBase : IDisposable
     {
         #region Socket Delegate
         /// <summary>
@@ -15,37 +15,37 @@ namespace HGServer.Network.Sockets
         /// </summary>
         /// <param name="acceptedSocket"></param>
         /// <param name="sender">event object</param>
-        public delegate void AcceptedHandler(Socket acceptedSocket, Socket sender);
+        public delegate void AcceptedHandler(SocketBase acceptedSocket, SocketBase sender);
 
         /// <summary>
         /// socket connect callback
         /// </summary>
-        public delegate void ConnectedHandler(Socket sender);
+        public delegate void ConnectedHandler(SocketBase sender);
 
         /// <summary>
         /// socket Disconnect callback
         /// </summary>
-        public delegate void DisconnectedHandler(Socket sender);
+        public delegate void DisconnectedHandler(SocketBase sender);
 
         /// <summary>
         /// receive callback
         /// </summary>
         /// <param name="dataSize">received size</param>
         /// <param name="sender">event object</param>
-        public delegate void ReceivedHandler(int dataSize, Socket sender);
+        public delegate void ReceivedHandler(int dataSize, SocketBase sender);
 
         /// <summary>
         /// send callback
         /// </summary>
         /// <param name="dataSize">sended size</param>
         /// <param name="sender">event object</param>
-        public delegate void SendedHandler(int dataSize, Socket sender);
+        public delegate void SendedHandler(int dataSize, SocketBase sender);
 
         /// <summary>
         /// socket close callback
         /// </summary>
         /// <param name="sender">event object</param>
-        public delegate void ClosedHandler(Socket sender);
+        public delegate void ClosedHandler(SocketBase sender);
         #endregion Socket Delegate
 
         #region Event
@@ -166,6 +166,7 @@ namespace HGServer.Network.Sockets
         #endregion Data Fields 
 
         #region Method
+
         public virtual void Bind(string ipAddress, int port)
         {
             var address = IPAddress.Parse(ipAddress);
@@ -199,7 +200,7 @@ namespace HGServer.Network.Sockets
         #region Abstract Method
         public abstract void Initialize();
         public abstract void Accept();
-        public abstract void Accept(Socket socket);
+        public abstract void Accept(SocketBase socket);
         public abstract void Connect(string ipAddress, int port);
         public abstract void Disconnect();
         public abstract void Dispose();

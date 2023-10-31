@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HGServer.Network.Session;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -15,5 +16,6 @@ namespace HGServer.App.Service
 
     internal class ListenerService
     {
+        private TcpNetworkSession _listener;
     }
 }

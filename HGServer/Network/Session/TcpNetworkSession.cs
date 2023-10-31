@@ -32,7 +32,30 @@ namespace HGServer.Network.Session
         }
         #endregion Constructor & Destructor
 
-        #region Method
+        #region Socket Event Method
+
+        public override void OnReceiveComplete(int dataSize, SocketBase sender)
+        {
+            _receiveBuffer.Commit(dataSize);
+
+            Message receivedMessage;
+            if (_receiveBuffer.TryPeekMessage(out receivedMessage) is false)
+                return;
+
+            if (_receiveBuffer.Length < receivedMessage.Size)
+                return;
+
+            Span<byte> memorySpan = _receiveBuffer.Pop(receivedMessage.Size);
+            // TODO: memorySpan을 처리시키도록 채널에 추가
+        }
+
+        public override void OnSendComplete(int dataSize, SocketBase sender)
+        {
+        }
+
+        #endregion Socket Event Method
+
+        #region Abstract Method
         public override void Initialize()
         {
             if (_socket is null || _socket.Connected is true)
@@ -114,32 +137,21 @@ namespace HGServer.Network.Session
             base.OnReceived(message, sender);
         }
 
-        public override void OnSended(Message message, object sender)
+        public void OnSended(Message message, INetworkSession sender)
         {
-            base.OnSended(message, sender);
-
             MessageSender nextMessage;
             _sendQueue.TryDequeue(out nextMessage);
 
-            Debug.Assert(nextMessage.TryGetMessage().MessageNo == message.MessageNo);
+            Message messageHeader;
+
+            Debug.Assert(nextMessage.TryGetMessage(out messageHeader));
+            Debug.Assert(messageHeader.MessageNo == message.MessageNo);
 
             // 해당 내용도 수정 필요
             if (0 < Interlocked.Decrement(ref _sendCount))
             {
                 if (_sendQueue.TryPeek(out nextMessage))
-                    Send(nextMessage.GetReadOnlyMemory());
-            }
-        }
-
-        public override void PushMessage(MessageSender messageSender)
-        {
-            base.PushMessage(messageSender);
-
-            if(1 == Interlocked.Add(ref _sendCount, 1))
-            {
-                MessageSender nextMessage;
-                if(_sendQueue.TryPeek(out nextMessage))
-                    Send(nextMessage.GetReadOnlyMemory());
+                    sender.Send(nextMessage.GetReadOnlyMemory());
             }
         }
 
@@ -182,7 +194,18 @@ namespace HGServer.Network.Session
                 _sendException?.Invoke(this, e);
             }
         }
-        #endregion Method
+        #endregion Abstract Method
+        public override void PushMessage(MessageSender messageSender)
+        {
+            base.PushMessage(messageSender);
+
+            if (1 == Interlocked.Add(ref _sendCount, 1))
+            {
+                MessageSender nextMessage;
+                if (_sendQueue.TryPeek(out nextMessage))
+                    Send(nextMessage.GetReadOnlyMemory());
+            }
+        }
 
         #region Implement IDisposable
         public override void Dispose()

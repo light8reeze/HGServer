@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Threading.Channels;
 
 namespace HGServer.App
 {
@@ -11,12 +12,12 @@ namespace HGServer.App
 
         #region data field
 
-        private List<IComponent>    _components = null;
-        private List<INetworkService>      _services   = null;
+        protected List<IComponent>           _components = null;
+        protected List<INetworkService>      _services   = null;
 
-        // component, service리스트를 읽기 전용 컬랙션으로 외부에 전달하기 위해 캐싱
-        private ReadOnlyCollection<IComponent>  _readOnlyComponents = null;
-        private ReadOnlyCollection<INetworkService>    _readOnlyServices = null;
+        // component, service리스트를 읽기 전용 컬랙션으로 외부에서 참조용으로 캐싱
+        protected ReadOnlyCollection<IComponent>         _readOnlyComponents = null;
+        protected ReadOnlyCollection<INetworkService>    _readOnlyServices = null;
         private bool disposedValue;
 
         public ReadOnlyCollection<IComponent> Components => _readOnlyComponents;
@@ -47,6 +48,7 @@ namespace HGServer.App
         {
             return _instance?.GetService<T>();
         }
+
         #endregion static method
 
         protected bool Initialize()
