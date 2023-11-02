@@ -7,6 +7,7 @@ namespace HGServer.App
 {
     interface IGameApplication
     {
+
         bool Start();
 
         IReadOnlyCollection<T> GetComponent<T>() where T : IComponent;

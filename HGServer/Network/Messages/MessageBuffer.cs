@@ -21,9 +21,11 @@ namespace HGServer.Network.Messages
         private byte[] _messageBuffer;
         private int _readIndex;
         private int _writeIndex;
+        private int _capacity;
         #endregion Data Fields
 
         public int Length => _writeIndex - _readIndex;
+        public int RemainSize => _capacity - Length;
 
         #region Constructor
         public MessageBuffer()
@@ -41,12 +43,14 @@ namespace HGServer.Network.Messages
         public void Initialize(int size)
         {
             _messageBuffer = GC.AllocateArray<byte>(size, pinned: true);
-            Clear();
+
+            _capacity = size;
+            _readIndex = 0;
+            _writeIndex = 0;
         }
 
         public void Clear()
         {
-            _messageBuffer.Initialize();
             _readIndex = 0;
             _writeIndex = 0;
         }
@@ -68,6 +72,13 @@ namespace HGServer.Network.Messages
             _readIndex += length;
 
             return readSpan;
+        }
+
+        public void Compact(int length)
+        {
+            Buffer.BlockCopy(_messageBuffer, _readIndex, _messageBuffer, 0, Length);
+            _readIndex  -= length;
+            _writeIndex -= length;
         }
 
         public bool TryPeekMessage(out Message msg)

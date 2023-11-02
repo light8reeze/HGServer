@@ -14,7 +14,7 @@ namespace HGServer.Network.Session
     /// <summary>
     /// Tcp Game Session Class
     /// </summary>
-    class TcpNetworkSession : NetworkSession<TcpSocket>
+    class TcpNetworkSession : ClientSession<TcpSocket>
     {
         #region Data Field
         private bool    _disposed = false;

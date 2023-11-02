@@ -1,221 +1,245 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
+using System.Diagnostics;
+using System.Net.Sockets;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Channels;
+using HGServer.Network.Channel;
 using HGServer.Network.Messages;
 using HGServer.Network.Sockets;
-using HGServer.Utility;
 
 namespace HGServer.Network.Session
 {
-    abstract class NetworkSession<T> : INetworkSession where T : SocketBase
+    abstract partial class NetworkSession : INetworkChannelObject, IDisposable
     {
-        #region Data Fields
-        
-        protected T                                 _socket = default;
-        protected MessageBuffer                     _receiveBuffer;
-        protected ConcurrentQueue<MessageSender>    _sendQueue = new ConcurrentQueue<MessageSender>();
+        private Channel<NetworkResult>          _networkChannel = null;
+        private ChannelWriter<NetworkResult>    _networkChannelWriter = null;
+        protected ChannelWriter<NetworkResult> ChannelWriter => _networkChannelWriter;
 
-        #endregion Data Fields
+        protected Socket        _socket = null;
+        protected MessageBuffer _receiveBuffer = null;
 
-        #region Session Delegate
-        /// <summary>
-        /// Session Connect callback
-        /// </summary>
-        /// <param name="session">connection event session</param>
-        public delegate void ConnectionEventHandler(INetworkSession session);
+        protected ConcurrentQueue<MessageSender> _sendQueue = new ConcurrentQueue<MessageSender>();
+        protected int _sendCount = 0;
 
-        /// <summary>
-        /// Session Message IO callback
-        /// </summary>
-        /// <param name="message">IO Completed Message</param>
-        /// <param name="session">IO Completed Object</param>
-        public delegate void DataTransferHandler(Message message, INetworkSession session);
-        #endregion Session Delegate
+        private bool _disposedValue;
+        private bool _closed = false;
 
-        #region Event
-        /// <summary>
-        /// On Accept session event
-        /// </summary>
-        protected ConnectionEventHandler _sessionAccept;
-        public event ConnectionEventHandler SessionAccept
-        {
-            add => _sessionAccept += value;
-            remove => _sessionAccept -= value;
-        }
-
-        /// <summary>
-        /// Exception handler on accept occured session accept
-        /// </summary>
-        protected ExceptionEventHandler _acceptException;
-        public event ExceptionEventHandler AcceptException
-        {
-            add => _acceptException += value;
-            remove => _acceptException -= value;
-        }
-
-        /// <summary>
-        /// On Accepted event
-        /// </summary>
-        protected ConnectionEventHandler      _sessionAccepted;
-        public event ConnectionEventHandler SessionAccepted
-        {
-            add => _sessionAccepted += value;
-            remove => _sessionAccepted -= value;
-        }
-
-        /// <summary>
-        /// On Received event
-        /// </summary>
-        protected DataTransferHandler         _dataReceived;
-        public event DataTransferHandler    DataReceived
-        {
-            add => _dataReceived += value;
-            remove => _dataReceived -= value;
-        }
-
-        /// <summary>
-        /// Exception handler on accept occured receive
-        /// </summary>
-        protected ExceptionEventHandler _receiveException;
-        public event ExceptionEventHandler ReceiveException
-        {
-            add => _receiveException += value;
-            remove => _receiveException -= value;
-        }
-
-        /// <summary>
-        /// On Sended event
-        /// </summary>
-        protected DataTransferHandler       _dataSended;
-        public event DataTransferHandler    DataSended
-        {
-            add => _dataSended += value;
-            remove => _dataSended -= value;
-        }
-
-        /// <summary>
-        /// Exception handler on accept occured session accept
-        /// </summary>
-        protected ExceptionEventHandler       _sendException;
-        public event ExceptionEventHandler  SendException
-        {
-            add => _sendException += value;
-            remove => _sendException -= value;
-        }
-
-        /// <summary>
-        /// On Closed event
-        /// </summary>
-        protected ConnectionEventHandler      _sessionDisconnect;
-        public event ConnectionEventHandler SessionDisconnect
-        {
-            add => _sessionDisconnect += value;
-            remove => _sessionDisconnect -= value;
-        }
-
-        /// <summary>
-        /// On Closed event
-        /// </summary>
-        protected ConnectionEventHandler      _sessionDisconnedted;
-        public event ConnectionEventHandler SessionDisconnected
-        {
-            add => _sessionDisconnedted += value;
-            remove => _sessionDisconnedted -= value;
-        }
-
-        /// <summary>
-        /// On Connected Event
-        /// </summary>
-        protected ConnectionEventHandler      _sessionConnected;
-        public event ConnectionEventHandler SessionConnected
-        {
-            add => _sessionConnected += value;
-            remove => _sessionConnected -= value;
-        }
-
-        /// <summary>
-        /// Exception handler on accept occured session connect
-        /// </summary>
-        protected ExceptionEventHandler       _connectException;
-        public event ExceptionEventHandler  ConnectException
-        {
-            add => _connectException += value;
-            remove => _connectException -= value;
-        }
-
-        private Func<NetworkSession<T>> _createSession;
-        public virtual Func<NetworkSession<T>> CreateSession
-        {
-            protected get => _createSession ??= (() => { return default; });
-            set => _createSession = value;
-        }
-
-        private Action<NetworkSession<T>> _deleteSession;
-        public virtual Action<NetworkSession<T>> DeleteSession
-        {
-            protected get => _deleteSession ??= ((session) => { session.Dispose(); });
-            set => _deleteSession = value;
-        }
-        #endregion Event
-
-        #region Constructor
         public NetworkSession()
         {
-            _socket = default;
-
-            SetSocketEvent();
-        }
-        #endregion Constructor
-
-        #region Socket Event Method
-        private void SetSocketEvent()
-        {
-            if (_socket is null)
-                return;
-
-            _socket.OnAccepted += OnSocketAccepted;
-            _socket.OnReceived += OnReceiveComplete;
-            _socket.OnDisconnected += OnDisconnected;
-            _socket.OnSended += OnSendComplete;
-            _socket.OnConnected += OnConnected;
         }
 
-        public virtual void OnSocketAccepted(SocketBase acceptedSocket, SocketBase sender)
+        ~NetworkSession()
         {
+            Dispose(false);
         }
-        public virtual void OnReceiveComplete(int dataSize, SocketBase sender)
-        {
-        }
-        public virtual void OnSendComplete(int dataSize, SocketBase sender)
-        {
-        }
-        public virtual void OnConnected(SocketBase sender)
-        {
-        }
-        public virtual void OnDisconnected(SocketBase sender)
-        {
-        }
-        #endregion Socket Event Method
 
         #region Method
-        public virtual void PushMessage(MessageSender messageSender)
+
+        public void PushMessage(MessageSender messageSender)
         {
             _sendQueue.Enqueue(messageSender);
         }
+
+        public bool TrySend()
+        {
+            if (_sendQueue.Count <= 0)
+                return false;
+
+            if (0 == Interlocked.CompareExchange(ref _sendCount, 1, 0))
+            {
+                MessageSender nextMessage;
+                if (_sendQueue.TryPeek(out nextMessage))
+                {
+                    Send(nextMessage.GetReadSpan());
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Session Initialize
+        /// </summary>
+        public void Initialize()
+        {
+            if (_socket is null || _socket.Connected is true)
+                throw new Exception("Already Initialized");
+            
+            _socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            _receiveBuffer = new MessageBuffer();
+        }
+
+        /// <summary>
+        /// Receive Packet Data to session
+        /// </summary>
+        public void Receive()
+        {
+            if (_socket is null)
+                throw new NullReferenceException("Not Initialized Client");
+
+            if (_socket.Connected is false)
+                throw new Exception("Not Connected");
+
+            if(_receiveBuffer.RemainSize < Marshal.SizeOf<Message>())
+                throw new Exception("Receive Buffer is Full");
+
+            // 예외 처리 추가
+            var packetBuffer = _receiveBuffer.GetWriteSpan();
+            _socket.BeginReceive(packetBuffer.ToArray(), 0, packetBuffer.Length, SocketFlags.None, OnReceiveComplete, this);
+        }
+
+        /// <summary>
+        /// Send Data to session
+        /// </summary>
+        public void Send(ReadOnlySpan<byte> messageBuffer)
+        {
+            if (_socket is null)
+                throw new NullReferenceException("Not Initialized Client");
+
+            if (_socket.Connected is false)
+                throw new Exception("Not Connected");
+
+            _socket.BeginSend(messageBuffer.ToArray(), 0, messageBuffer.Length, SocketFlags.None, OnReceiveComplete, this);
+        }
+
+        public void Close()
+        {
+            if (_socket?.Connected is true)
+                Disconnect();
+
+            _socket?.Dispose();
+        }
+
+        /// <summary>
+        /// Disconnect Session
+        /// </summary>
+        public void Disconnect()
+        {
+            if (_socket?.Connected is false)
+                return;
+
+            _socket?.BeginDisconnect(true, OnDisconnected, this);
+        }
         #endregion Method
 
-        #region Abstract Method
-        public abstract void Accept();
-        public abstract void Connect(string ipAddress, int port);
-        public abstract void Disconnect();
-        public abstract void Dispose();
-        public abstract void Close();
-        public abstract void Initialize();
-        public abstract void Receive();
-        public abstract void Send<TMessage>(ref TMessage message) where TMessage : struct;
-        public abstract void Send(ReadOnlyMemory<byte> messageBuffer);
+        #region Socket Event Method
 
-        #endregion Abstract Method
+        public virtual void OnReceiveComplete(IAsyncResult result)
+        {
+            int receivedSize = _socket.EndReceive(result);
+            if (0 <= receivedSize)
+            {
+                Disconnect();
+                return;
+            }
+
+            _receiveBuffer.Commit(receivedSize);
+
+            Message receivedMessage;
+            // 처리할 메세지가 없는경우 Receive를 시도하고 종료한다.
+            if (_receiveBuffer.TryPeekMessage(out receivedMessage) is false)
+            {
+                Receive();
+                return;
+            }
+
+            if (_receiveBuffer.Length < receivedMessage.Size)
+            {
+                Receive();
+                return;
+            }
+
+            // 처리할 메세지가 있을경우 Channel에 전달하여 처리하도록 한다.
+            // TODO: 실패시 처리 추가
+            TryWriteToChannel(IOEventType.Receive);
+        }
+         
+        public virtual void OnSendComplete(IAsyncResult result)
+        {
+            int sendedSize = _socket.EndSend(result);
+            if (0 <= sendedSize)
+            {
+                Disconnect();
+                return;
+            }
+
+            MessageSender nextMessage;
+            bool isTrySuccess = _sendQueue.TryDequeue(out nextMessage);
+            Debug.Assert(isTrySuccess);
+
+            Message messageHeader;
+            isTrySuccess = nextMessage.TryGetMessage(out messageHeader);
+            Debug.Assert(isTrySuccess);
+
+            if(sendedSize != messageHeader.Size)
+            {
+                Interlocked.CompareExchange(ref _sendCount, 0, 1);
+                Disconnect();
+                return;
+            }
+
+            Interlocked.CompareExchange(ref _sendCount, 0, 1);
+            TrySend();
+
+            TryWriteToChannel(IOEventType.Send);
+        }
+        
+        public virtual void OnDisconnected(IAsyncResult result)
+        {
+            _socket.EndDisconnect(result);
+
+            if(_closed is false)
+                TryWriteToChannel(IOEventType.Disconnect);
+        }
+
+        #endregion Socket Event Method
+
+        #region INetworkChannelObject
+
+        public void RegisterChannel(Channel<NetworkResult> channel)
+        {
+            _networkChannel = channel;
+            _networkChannelWriter = _networkChannel?.Writer;
+        }
+
+        public abstract bool OnIoCompleted();
+
+        public abstract bool RequestIo();
+
+        public bool TryWriteToChannel(IOEventType eventType)
+        {
+            NetworkResult networkResult;
+            networkResult.Type = IOEventType.Send;
+            networkResult.ChannelObject = this;
+
+            return ChannelWriter.TryWrite(networkResult);
+        }
+
+        #endregion INetworkChannelObject
+
+        #region IDisposable
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposedValue is true)
+                return;
+
+            // Unmanaged 리소스 관리
+            if (disposing is false)
+            {
+                _socket?.Close();
+                _disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+        #endregion IDisposable
     }
 }

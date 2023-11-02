@@ -11,26 +11,20 @@ namespace HGServer.Network.Messages
     internal class MessageSender : IDisposable
     {
         private MessageBuffer   _sendBuffer;
-        private int             _sendedSize;
         private bool            _disposed;
 
         public MessageSender(MessageBuffer sendBuffer)
         {
             _sendBuffer = sendBuffer;
-            _sendedSize = 0;
         }
 
         public void PushMessage<T>(ref T message) where T : struct => _sendBuffer?.Push(ref message);
 
-        public void Send<T>(NetworkSession<T> session) where T : SocketBase => session.PushMessage(this);
+        public void Send(NetworkSession session) => session.PushMessage(this);
 
-        public ReadOnlyMemory<byte> GetReadOnlyMemory() => _sendBuffer.GetReadMemory();
+        public ReadOnlySpan<byte> GetReadSpan() => _sendBuffer.GetReadSpan();
 
         public bool TryGetMessage(out Message msg) => _sendBuffer.TryPeekMessage(out msg);
-
-        public void OnDataSended(int size) => _sendedSize += size;
-
-        public bool IsSendCompleted() => _sendBuffer.Length() == _sendedSize;
 
         protected virtual void Dispose(bool disposing)
         {
