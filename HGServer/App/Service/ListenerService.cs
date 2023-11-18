@@ -16,6 +16,10 @@ namespace HGServer.App.Service
 
     internal class ListenerService
     {
-        private TcpNetworkSession _listener;
+        private NetworkSession _listener;
+
+        public ListenerService(ListenerConfig config)
+        {
+        }
     }
 }

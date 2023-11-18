@@ -5,18 +5,15 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Channels;
+using System.Transactions;
 using HGServer.Network.Channel;
 using HGServer.Network.Messages;
 using HGServer.Network.Sockets;
 
 namespace HGServer.Network.Session
 {
-    abstract partial class NetworkSession : INetworkChannelObject, IDisposable
+    abstract partial class NetworkSession : NetworkChannelObject, IDisposable
     {
-        private Channel<NetworkResult>          _networkChannel = null;
-        private ChannelWriter<NetworkResult>    _networkChannelWriter = null;
-        protected ChannelWriter<NetworkResult> ChannelWriter => _networkChannelWriter;
-
         protected Socket        _socket = null;
         protected MessageBuffer _receiveBuffer = null;
 
@@ -199,23 +196,19 @@ namespace HGServer.Network.Session
 
         #region INetworkChannelObject
 
-        public void RegisterChannel(Channel<NetworkResult> channel)
+        public override void RegisterChannel(Channel<NetworkResult> channel)
         {
-            _networkChannel = channel;
-            _networkChannelWriter = _networkChannel?.Writer;
+            base.RegisterChannel(channel);
         }
 
-        public abstract bool OnIoCompleted();
-
-        public abstract bool RequestIo();
-
-        public bool TryWriteToChannel(IOEventType eventType)
+        public override bool OnIoCompleted()
         {
-            NetworkResult networkResult;
-            networkResult.Type = IOEventType.Send;
-            networkResult.ChannelObject = this;
+            throw new NotImplementedException();
+        }
 
-            return ChannelWriter.TryWrite(networkResult);
+        public override bool RequestIo()
+        {
+            throw new NotImplementedException();
         }
 
         #endregion INetworkChannelObject

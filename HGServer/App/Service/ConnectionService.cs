@@ -19,7 +19,7 @@ namespace HGServer.App.Service
     internal class ConnectionService : INetworkService
     {
         private Dictionary<int, ConnectionConfig> _configDictionary = new Dictionary<int, ConnectionConfig>();
-        private Dictionary<int, TcpNetworkSession> _connectorDictionary = new Dictionary<int, TcpNetworkSession>();
+        private Dictionary<int, NetworkListener> _connectorDictionary = new Dictionary<int, NetworkListener>();
 
         public ConnectionService() 
         {
@@ -38,7 +38,7 @@ namespace HGServer.App.Service
             {
                 foreach (var config in _configDictionary.Values)
                 {
-                    TcpNetworkSession connector = new TcpNetworkSession();
+                    NetworkListener connector = new NetworkListener();
                     connector.Initialize();
 
                     _connectorDictionary.Add(config.ConnectionID, connector);

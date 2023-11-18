@@ -19,4 +19,33 @@ namespace HGServer.Network.Session
 
         public bool RequestIo();
     }
+
+    internal abstract class NetworkChannelObject : INetworkChannelObject
+    {
+        protected Channel<NetworkResult> _networkChannel = null;
+        protected ChannelWriter<NetworkResult> _networkChannelWriter = null;
+        protected ChannelWriter<NetworkResult> ChannelWriter => _networkChannelWriter;
+
+        public bool TryWriteToChannel(IOEventType eventType)
+        {
+            NetworkResult networkResult;
+            networkResult.Type = IOEventType.Send;
+            networkResult.ChannelObject = this;
+
+            return ChannelWriter.TryWrite(networkResult);
+        }
+
+        #region INetworkChannelObject
+        public abstract bool OnIoCompleted();
+        
+        public virtual void RegisterChannel(Channel<NetworkResult> channel)
+        {
+            _networkChannel = channel;
+            _networkChannelWriter = _networkChannel?.Writer;
+        }
+
+        public abstract bool RequestIo();
+
+        #endregion INetworkChannelObject
+    }
 }
