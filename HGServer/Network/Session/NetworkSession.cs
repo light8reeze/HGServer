@@ -8,7 +8,6 @@ using System.Threading.Channels;
 using System.Transactions;
 using HGServer.Network.Channel;
 using HGServer.Network.Messages;
-using HGServer.Network.Sockets;
 
 namespace HGServer.Network.Session
 {
@@ -193,25 +192,6 @@ namespace HGServer.Network.Session
         }
 
         #endregion Socket Event Method
-
-        #region INetworkChannelObject
-
-        public override void RegisterChannel(Channel<NetworkResult> channel)
-        {
-            base.RegisterChannel(channel);
-        }
-
-        public override bool OnIoCompleted()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override bool RequestIo()
-        {
-            throw new NotImplementedException();
-        }
-
-        #endregion INetworkChannelObject
 
         #region IDisposable
 

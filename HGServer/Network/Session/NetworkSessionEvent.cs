@@ -10,7 +10,7 @@ using HGServer.Utility;
 
 namespace HGServer.Network.Session
 {
-    partial class NetworkSession
+    abstract partial class NetworkSession
     {
         #region Session Delegate
         /// <summary>

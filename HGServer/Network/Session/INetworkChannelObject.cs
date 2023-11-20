@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using static HGServer.Network.Session.INetworkChannelObject;
 
 namespace HGServer.Network.Session
 {
@@ -13,18 +14,59 @@ namespace HGServer.Network.Session
     /// </summary>
     internal interface INetworkChannelObject
     {
+        public delegate bool NetworkChannelHandler();
+
         public void RegisterChannel(Channel<NetworkResult> channel);
 
-        public bool OnIoCompleted();
+        public bool OnIoCompleted(IOEventType eventType);
 
-        public bool RequestIo();
+        public bool RequestIo(IOEventType eventType);
+
+        public bool OnError(IOEventType eventType);
     }
 
-    internal abstract class NetworkChannelObject : INetworkChannelObject
+    class NetworkChannelObjectEvent
+    { 
+        private Dictionary<IOEventType, NetworkChannelHandler> _ioEventHandlers = new Dictionary<IOEventType, NetworkChannelHandler>();
+
+        public NetworkChannelHandler this[IOEventType type]
+        {
+            get
+            {
+                if (_ioEventHandlers.TryGetValue(type, out NetworkChannelHandler ioEventHandler))
+                    return ioEventHandler;
+
+                return null;
+            }
+            set
+            {
+                if (_ioEventHandlers.ContainsKey(type))
+                    _ioEventHandlers[type] += value;
+                else
+                    _ioEventHandlers.Add(type, value);
+            }
+        }
+    }
+
+    internal class NetworkChannelObject : INetworkChannelObject
     {
+        #region Channel
         protected Channel<NetworkResult> _networkChannel = null;
         protected ChannelWriter<NetworkResult> _networkChannelWriter = null;
         protected ChannelWriter<NetworkResult> ChannelWriter => _networkChannelWriter;
+        #endregion Channel
+
+        #region Network IO Event
+        protected NetworkChannelObjectEvent _completedEvent = new NetworkChannelObjectEvent();
+        public NetworkChannelObjectEvent CompletedEvent => _completedEvent;
+
+        protected NetworkChannelObjectEvent _requestEvent = new NetworkChannelObjectEvent();
+        public NetworkChannelObjectEvent RequestEvent => _requestEvent;
+
+        protected NetworkChannelObjectEvent _errorEvent = new NetworkChannelObjectEvent();
+        public NetworkChannelObjectEvent ErrorEvent => _errorEvent;
+        #endregion Network IO Event
+
 
         public bool TryWriteToChannel(IOEventType eventType)
         {
@@ -36,15 +78,26 @@ namespace HGServer.Network.Session
         }
 
         #region INetworkChannelObject
-        public abstract bool OnIoCompleted();
-        
-        public virtual void RegisterChannel(Channel<NetworkResult> channel)
+        public bool OnIoCompleted(IOEventType eventType)
+        {
+            return CompletedEvent[eventType]?.Invoke() ?? false;
+        }
+
+        public void RegisterChannel(Channel<NetworkResult> channel)
         {
             _networkChannel = channel;
             _networkChannelWriter = _networkChannel?.Writer;
         }
 
-        public abstract bool RequestIo();
+        public bool RequestIo(IOEventType eventType)
+        {
+            return RequestEvent[eventType]?.Invoke() ?? false;
+        }
+
+        public bool OnError(IOEventType eventType)
+        {
+            return ErrorEvent[eventType]?.Invoke() ?? false;
+        }
 
         #endregion INetworkChannelObject
     }
